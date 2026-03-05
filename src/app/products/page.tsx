@@ -3,6 +3,8 @@ import { getActiveProducts, getAllCategories } from "@/modules/shop/queries";
 import { ProductCard } from "@/modules/shop/components/product-card";
 import { ProductFilters } from "@/modules/shop/components/product-filters";
 
+export const dynamic = 'force-dynamic';
+
 // Dinamikus metaadatok /products oldalhoz
 export const metadata = {
   title: "HHM Shop - Termékek",

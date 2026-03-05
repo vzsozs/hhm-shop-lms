@@ -1,6 +1,8 @@
 import { ProductForm } from "@/modules/shop/components/product-form";
 import { getTranslation } from "@/modules/shared/lib/i18n";
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminProductsPage() {
   // Példa i18n használatára a szerver oldalon
   const title = await getTranslation("admin.products.title", "hu");

@@ -12,5 +12,19 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hhm-shop-web
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgres://${DB_USER:-hhm_user}:${DB_PASSWORD:-hhm_password}@db:5432/${DB_NAME:-hhm_shop_lms}
+      - NEXT_PUBLIC_APP_URL=http://185.208.227.129:3000
+    depends_on:
+      - db
+
 volumes:
   postgres_data:

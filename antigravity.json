@@ -1,6 +1,12 @@
 {
-  "server": {
-    "host": "185.208.227.129",
-    "user": "root"
+  "environments": {
+    "vps": {
+      "host": "185.208.227.129",
+      "user": "root",
+      "identityFile": "~/.ssh/id_rsa",
+      "deployPath": "/var/www/hhm-shop-lms",
+      "buildCommand": "npm run build",
+      "startCommand": "docker compose up -d --build"
+    }
   }
 }

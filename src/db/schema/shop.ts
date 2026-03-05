@@ -8,6 +8,8 @@ export const orderStatusEnum = pgEnum("order_status", ["pending", "paid", "shipp
 
 export const products = pgTable("products", {
   id: uuid("id").defaultRandom().primaryKey(),
+  // SEO-barát, egyedi URL azonosító (pl. "nagy-kezmuves-hangtal")
+  slug: varchar("slug", { length: 500 }).unique().notNull(),
   name: jsonb("name").notNull(), // { hu: string, en: string, sk: string }
   brand: varchar("brand", { length: 255 }),
   description: jsonb("description"), // { hu: string, en: string, sk: string }

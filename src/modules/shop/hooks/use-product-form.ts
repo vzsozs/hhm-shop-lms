@@ -60,6 +60,7 @@ export function useProductForm() {
       height: values.height,
       depth: values.depth,
       imageUrl: values.imageUrl,
+      categoryIds: [], // Az admin form jelenlegi verziója nem kezeli, alapértelmezetten üres
     };
 
     const result = await createProduct(payload);

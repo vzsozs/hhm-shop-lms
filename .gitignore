@@ -39,3 +39,21 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Drizzle migrations (nem kell az AI-nak indexelnie a SQL fájlokat állandóan)
+drizzle/
+src/db/migrations/
+
+# IDE és AI specifikus mappák
+.antigravity/
+.cursor/
+.windsurf/
+
+# Ideiglenes fájlok
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Hatalmas fájlok (ha lennének képek/videók)
+public/uploads/

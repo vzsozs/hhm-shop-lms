@@ -88,6 +88,8 @@ export const createProductServerSchema = z.object({
   height: z.number().optional().default(0),
   depth: z.number().optional().default(0),
   imageUrl: z.string().url().optional().or(z.literal("")),
+  // Kategória azonosítók listája (opcionális)
+  categoryIds: z.array(z.string().uuid()).optional().default([]),
 }).superRefine((data, ctx) => {
   // Szerveroldali biztonsági validáció
   if (data.type === "physical") {

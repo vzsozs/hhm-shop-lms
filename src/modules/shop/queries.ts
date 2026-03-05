@@ -11,6 +11,7 @@ export type ProductListFilters = {
 // Visszaérkező típus a UI-hoz
 export type ProductListItem = {
   id: string;
+  slug: string; // SEO-barát URL azonosító
   name: Record<string, string>; // JSONB többnyelvű név { hu: string, en: string, ... }
   description: Record<string, string> | null;
   type: "physical" | "digital";
@@ -48,6 +49,7 @@ export async function getActiveProducts(filters?: ProductListFilters): Promise<P
   let baseQuery = db
     .select({
       id: products.id,
+      slug: products.slug,
       name: products.name,
       description: products.description,
       type: products.type,
@@ -127,6 +129,7 @@ export type ProductMediaItem = {
 
 export type ProductDetailItem = {
   id: string;
+  slug: string; // SEO-barát URL azonosító
   name: Record<string, string>;
   brand: string | null;
   description: Record<string, string> | null;
@@ -137,6 +140,65 @@ export type ProductDetailItem = {
   categories: { id: string; name: Record<string, string>; slug: string }[];
 };
 
+// Termék lekérdezése slug alapján (publikus termékoldalhoz)
+export async function getProductBySlug(slug: string): Promise<ProductDetailItem | null> {
+  const [productData] = await db
+    .select()
+    .from(products)
+    .where(eq(products.slug, slug))
+    .limit(1);
+
+  if (!productData) {
+    return null;
+  }
+
+  const [productVariantsData, productMediaData, productCategoriesData] = await Promise.all([
+    db.select().from(productVariants).where(eq(productVariants.productId, productData.id)),
+    db.select().from(productMedia).where(eq(productMedia.productId, productData.id)),
+    db
+      .select({
+        id: categories.id,
+        name: categories.name,
+        slug: categories.slug,
+      })
+      .from(productCategories)
+      .innerJoin(categories, eq(productCategories.categoryId, categories.id))
+      .where(eq(productCategories.productId, productData.id)),
+  ]);
+
+  return {
+    id: productData.id,
+    slug: productData.slug,
+    name: productData.name as Record<string, string>,
+    brand: productData.brand,
+    description: productData.description as Record<string, string> | null,
+    specs: productData.specs as Record<string, any> | null,
+    type: productData.type as "physical" | "digital",
+    variants: productVariantsData.map(v => ({
+      id: v.id,
+      sku: v.sku,
+      priceHuf: v.priceHuf,
+      priceEur: v.priceEur ? Number(v.priceEur) : null,
+      stock: v.stock,
+      weight: v.weight ? Number(v.weight) : null,
+      width: v.width ? Number(v.width) : null,
+      height: v.height ? Number(v.height) : null,
+      depth: v.depth ? Number(v.depth) : null,
+    })),
+    media: productMediaData.map(m => ({
+      id: m.id,
+      url: m.url,
+      type: m.type as "image" | "video" | "sound",
+    })),
+    categories: productCategoriesData.map(c => ({
+      id: c.id,
+      name: c.name as Record<string, string>,
+      slug: c.slug,
+    })),
+  };
+}
+
+// Termék lekérdezése ID alapján (admin felülethez)
 export async function getProductById(id: string): Promise<ProductDetailItem | null> {
   const [productData] = await db
     .select()
@@ -164,6 +226,7 @@ export async function getProductById(id: string): Promise<ProductDetailItem | nu
 
   return {
     id: productData.id,
+    slug: productData.slug,
     name: productData.name as Record<string, string>,
     brand: productData.brand,
     description: productData.description as Record<string, string> | null,

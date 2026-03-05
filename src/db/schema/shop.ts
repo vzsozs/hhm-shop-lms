@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, text, integer, decimal, jsonb, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, integer, decimal, jsonb, pgEnum } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 
 // Enumok a terméktípusokhoz, mediákhoz és rendelés státuszokhoz
@@ -8,9 +8,9 @@ export const orderStatusEnum = pgEnum("order_status", ["pending", "paid", "shipp
 
 export const products = pgTable("products", {
   id: uuid("id").defaultRandom().primaryKey(),
-  name: varchar("name", { length: 255 }).notNull(),
+  name: jsonb("name").notNull(), // { hu: string, en: string, sk: string }
   brand: varchar("brand", { length: 255 }),
-  description: text("description"),
+  description: jsonb("description"), // { hu: string, en: string, sk: string }
   specs: jsonb("specs"), // Rugalmas specifikációk JSON-ben
   type: productTypeEnum("type").default("physical").notNull(),
 });
@@ -60,4 +60,15 @@ export const coupons = pgTable("coupons", {
   discountAmount: integer("discount_amount"), // Fix összeg
   discountPercentage: decimal("discount_percentage", { precision: 5, scale: 2 }), // Százalék
   validUntil: timestamp("valid_until"),
+});
+
+export const categories = pgTable("categories", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: jsonb("name").notNull(), // { hu: string, en: string, sk: string }
+  slug: varchar("slug", { length: 255 }).unique().notNull(),
+});
+
+export const productCategories = pgTable("product_categories", {
+  productId: uuid("product_id").references(() => products.id, { onDelete: 'cascade' }).notNull(),
+  categoryId: uuid("category_id").references(() => categories.id, { onDelete: 'cascade' }).notNull(),
 });

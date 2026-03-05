@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: hhm-shop-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-hhm_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-hhm_password}
+      POSTGRES_DB: ${DB_NAME:-hhm_shop_lms}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

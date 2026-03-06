@@ -4,6 +4,10 @@ import * as schema from "./schema";
 
 const connectionString = process.env.DATABASE_URL!;
 
+if (!connectionString) {
+  throw new Error("DATABASE_URL is not set");
+}
+
 // Megakadályozzuk a többszörös kapcsolatot fejlesztés közben
 const client = postgres(connectionString);
 export const db = drizzle(client, { schema });

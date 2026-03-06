@@ -27,9 +27,19 @@ export const productFormSchema = z.object({
   name_en: z.string().optional(),
   name_sk: z.string().optional(),
   
+  // A régi leírás (megmaradhat visszafelé kompatibilitás miatt, de opcionális)
   description_hu: z.string().optional(),
   description_en: z.string().optional(),
   description_sk: z.string().optional(),
+  
+  // Új Leírások (Rövid és Hosszú - egyelőre legalább a magyart kezelve az UI-ban)
+  shortDescription_hu: z.string().optional(),
+  shortDescription_en: z.string().optional(),
+  shortDescription_sk: z.string().optional(),
+
+  longDescription_hu: z.string().optional(),
+  longDescription_en: z.string().optional(),
+  longDescription_sk: z.string().optional(),
   
   // Árazás
   priceHuf: rhfNumberField.refine(v => v >= 0, { message: "Nem lehet negatív!" }),
@@ -49,6 +59,11 @@ export const productFormSchema = z.object({
     url: z.string().min(1),
     type: z.enum(["IMAGE", "YOUTUBE", "AUDIO"]),
   })).optional().default([]),
+
+  status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
+  priority: rhfNumberField.optional().default(0),
+  layoutTemplate: z.enum(["STANDARD", "VIDEO_CENTERED", "DOCUMENTARY"]).default("STANDARD"),
+  categoryIds: z.array(z.string().uuid()).optional().default([]),
 
 }).superRefine((data, ctx) => {
   // Feltételes validáció fizikai termékeknél
@@ -83,6 +98,16 @@ export const createProductServerSchema = z.object({
     en: z.string().optional().default(""),
     sk: z.string().optional().default(""),
   }),
+  shortDescription: z.object({
+    hu: z.string().optional().default(""),
+    en: z.string().optional().default(""),
+    sk: z.string().optional().default(""),
+  }),
+  longDescription: z.object({
+    hu: z.string().optional().default(""),
+    en: z.string().optional().default(""),
+    sk: z.string().optional().default(""),
+  }),
   sku: z.string().optional(),
   priceHuf: z.number().min(0),
   priceEur: z.number().min(0),
@@ -96,6 +121,10 @@ export const createProductServerSchema = z.object({
   })).optional().default([]),
   // Kategória azonosítók listája (opcionális)
   categoryIds: z.array(z.string().uuid()).optional().default([]),
+  
+  status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
+  priority: z.number().optional().default(0),
+  layoutTemplate: z.enum(["STANDARD", "VIDEO_CENTERED", "DOCUMENTARY"]).default("STANDARD"),
 }).superRefine((data, ctx) => {
   // Szerveroldali biztonsági validáció
   if (data.type === "physical") {

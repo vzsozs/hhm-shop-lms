@@ -55,7 +55,12 @@ export async function createProduct(formData: CreateProductPayload) {
           slug, // Automatikusan generált SEO slug
           name: validated.name as Record<string, string>,
           description: validated.description as Record<string, string>,
+          shortDescription: validated.shortDescription as Record<string, string>,
+          longDescription: validated.longDescription as Record<string, string>,
           type: validated.type,
+          status: validated.status,
+          priority: validated.priority,
+          layoutTemplate: validated.layoutTemplate,
         })
         .returning();
 
@@ -109,6 +114,84 @@ export async function createProduct(formData: CreateProductPayload) {
       return { success: false, error: error.issues[0]?.message || "Validációs hiba" };
     }
     return { success: false, error: "Váratlan hiba történt az adatbázisba írás során." };
+  }
+}
+
+export async function updateProduct(id: string, formData: CreateProductPayload) {
+  try {
+    const validated = createProductServerSchema.parse(formData);
+
+    const result = await db.transaction(async (tx) => {
+      // 1. Termék frissítése
+      const [updatedProduct] = await tx
+        .update(products)
+        .set({
+          name: validated.name as Record<string, string>,
+          description: validated.description as Record<string, string>,
+          shortDescription: validated.shortDescription as Record<string, string>,
+          longDescription: validated.longDescription as Record<string, string>,
+          type: validated.type,
+          status: validated.status,
+          priority: validated.priority,
+          layoutTemplate: validated.layoutTemplate,
+        })
+        .where(eq(products.id, id))
+        .returning();
+
+      // 2. Variáns frissítése
+      await tx
+        .update(productVariants)
+        .set({
+          sku: validated.sku || `DIG-${Date.now()}`,
+          priceHuf: validated.priceHuf,
+          priceEur: validated.priceEur.toString(),
+          weight: validated.weight ? validated.weight.toString() : null,
+          width: validated.width ? validated.width.toString() : null,
+          height: validated.height ? validated.height.toString() : null,
+          depth: validated.depth ? validated.depth.toString() : null,
+        })
+        .where(eq(productVariants.productId, id));
+
+      // 3. Média szinkronizálása (Törlünk mindent és újra felvisszük az új sorrenddel)
+      await tx.delete(productMedia).where(eq(productMedia.productId, id));
+
+      if (validated.media && validated.media.length > 0) {
+        await tx.insert(productMedia).values(
+          validated.media.map((m, index) => ({
+            productId: id,
+            url: m.url,
+            type: m.type as "IMAGE" | "YOUTUBE" | "AUDIO",
+            order: index,
+          }))
+        );
+      }
+
+      // 4. Kategória szinkronizálása
+      await tx.delete(productCategories).where(eq(productCategories.productId, id));
+      if (validated.categoryIds && validated.categoryIds.length > 0) {
+        await tx.insert(productCategories).values(
+          validated.categoryIds.map((categoryId: string) => ({
+            productId: id,
+            categoryId,
+          }))
+        );
+      }
+
+      return updatedProduct;
+    });
+
+    revalidatePath("/admin/products");
+    revalidatePath("/products");
+    revalidatePath(`/products/${result.slug}`);
+    
+    return { success: true, product: result };
+
+  } catch (error) {
+    console.error("Hiba a termék frissítésekor:", error);
+    if (error instanceof z.ZodError) {
+      return { success: false, error: error.issues[0]?.message || "Validációs hiba" };
+    }
+    return { success: false, error: "Váratlan hiba történt a módosítás során." };
   }
 }
 

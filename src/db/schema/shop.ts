@@ -3,6 +3,7 @@ import { users } from "./auth";
 
 // Enumok a terméktípusokhoz, mediákhoz és rendelés státuszokhoz
 export const productTypeEnum = pgEnum("product_type", ["physical", "digital"]);
+export const productStatusEnum = pgEnum("product_status", ["ACTIVE", "INACTIVE"]);
 export const mediaTypeEnum = pgEnum("media_type", ["IMAGE", "YOUTUBE", "AUDIO"]);
 export const orderStatusEnum = pgEnum("order_status", ["pending", "paid", "shipped", "completed", "cancelled"]);
 
@@ -13,8 +14,13 @@ export const products = pgTable("products", {
   name: jsonb("name").notNull(), // { hu: string, en: string, sk: string }
   brand: varchar("brand", { length: 255 }),
   description: jsonb("description"), // { hu: string, en: string, sk: string }
+  shortDescription: jsonb("short_description"), // { hu: string, en: string, sk: string }
+  longDescription: jsonb("long_description"), // { hu: string, en: string, sk: string }
   specs: jsonb("specs"), // Rugalmas specifikációk JSON-ben
   type: productTypeEnum("type").default("physical").notNull(),
+  status: productStatusEnum("status").default("ACTIVE").notNull(),
+  priority: integer("priority").default(0).notNull(),
+  layoutTemplate: varchar("layout_template", { length: 100 }).default("STANDARD").notNull(),
 });
 
 export const productVariants = pgTable("product_variants", {

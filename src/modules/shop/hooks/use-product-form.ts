@@ -21,10 +21,15 @@ export function useProductForm() {
       type: "physical",
       name_hu: "",
       name_en: "",
-      name_sk: "",
       description_hu: "",
       description_en: "",
       description_sk: "",
+      shortDescription_hu: "",
+      shortDescription_en: "",
+      shortDescription_sk: "",
+      longDescription_hu: "",
+      longDescription_en: "",
+      longDescription_sk: "",
       sku: "",
       priceHuf: 0,
       priceEur: 0,
@@ -33,6 +38,10 @@ export function useProductForm() {
       height: 0,
       depth: 0,
       media: [],
+      status: "ACTIVE",
+      priority: 0,
+      layoutTemplate: "STANDARD",
+      categoryIds: [],
     },
   });
 
@@ -54,6 +63,16 @@ export function useProductForm() {
         en: values.description_en || "",
         sk: values.description_sk || "",
       },
+      shortDescription: {
+        hu: values.shortDescription_hu || "",
+        en: values.shortDescription_en || "",
+        sk: values.shortDescription_sk || "",
+      },
+      longDescription: {
+        hu: values.longDescription_hu || "",
+        en: values.longDescription_en || "",
+        sk: values.longDescription_sk || "",
+      },
       sku: values.sku,
       priceHuf: values.priceHuf,
       priceEur: values.priceEur,
@@ -62,7 +81,10 @@ export function useProductForm() {
       height: values.height,
       depth: values.depth,
       media: values.media,
-      categoryIds: [], // Az admin form jelenlegi verziója nem kezeli, alapértelmezetten üres
+      status: values.status,
+      priority: values.priority,
+      layoutTemplate: values.layoutTemplate,
+      categoryIds: values.categoryIds || [],
     };
 
     const result = await createProduct(payload);
@@ -76,5 +98,26 @@ export function useProductForm() {
     }
   }
 
-  return { form, isPending, onSubmit, productType };
+  const moveMedia = (index: number, direction: 'UP' | 'DOWN') => {
+    const currentMedia = [...(form.getValues("media") || [])];
+    if (direction === 'UP' && index > 0) {
+      const temp = currentMedia[index - 1];
+      currentMedia[index - 1] = currentMedia[index];
+      currentMedia[index] = temp;
+      form.setValue("media", currentMedia, { shouldDirty: true });
+    } else if (direction === 'DOWN' && index < currentMedia.length - 1) {
+      const temp = currentMedia[index + 1];
+      currentMedia[index + 1] = currentMedia[index];
+      currentMedia[index] = temp;
+      form.setValue("media", currentMedia, { shouldDirty: true });
+    }
+  };
+
+  const removeMedia = (index: number) => {
+    const currentMedia = form.getValues("media") || [];
+    currentMedia.splice(index, 1);
+    form.setValue("media", [...currentMedia], { shouldDirty: true });
+  };
+
+  return { form, isPending, onSubmit, productType, moveMedia, removeMedia };
 }

@@ -72,13 +72,16 @@ export async function createProduct(formData: CreateProductPayload) {
         depth: validated.depth ? validated.depth.toString() : null,
       });
 
-      // 3. (Opcionális) Média/Kép mentése a Product Media táblába
-      if (validated.imageUrl) {
-        await tx.insert(productMedia).values({
-          productId: newProduct.id,
-          url: validated.imageUrl,
-          type: "image",
-        });
+      // 3. Média mentése a Product Media táblába
+      if (validated.media && validated.media.length > 0) {
+        await tx.insert(productMedia).values(
+          validated.media.map((m, index) => ({
+            productId: newProduct.id,
+            url: m.url,
+            type: m.type as "IMAGE" | "YOUTUBE" | "AUDIO",
+            order: index,
+          }))
+        );
       }
 
       // 4. Kategória hozzárendelések mentése

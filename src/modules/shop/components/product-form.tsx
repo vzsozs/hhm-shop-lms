@@ -1,5 +1,4 @@
-"use client";
-
+import { useState } from "react";
 import { useProductForm, ProductFormValues } from "../hooks/use-product-form";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +23,36 @@ import {
 
 export function ProductForm() {
   const { form, isPending, onSubmit, productType } = useProductForm();
+  
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingAudio, setUploadingAudio] = useState(false);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: "IMAGE" | "AUDIO") => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (type === "IMAGE") setUploadingImage(true);
+    if (type === "AUDIO") setUploadingAudio(true);
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (data.url) {
+        const currentMedia = form.getValues("media") || [];
+        form.setValue("media", [...currentMedia, { url: data.url, type }]);
+      }
+    } catch(err) {
+      console.error(err);
+    } finally {
+      if (type === "IMAGE") setUploadingImage(false);
+      if (type === "AUDIO") setUploadingAudio(false);
+    }
+  };
+
+  const currentMedia = form.watch("media") || [];
 
   return (
     <Card className="w-full max-w-2xl mx-auto">
@@ -51,19 +80,6 @@ export function ProductForm() {
                         <SelectItem value="digital">Digitális termék (LMS)</SelectItem>
                       </SelectContent>
                     </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="imageUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Kép URL (Demonstráció)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="https://..." {...field} />
-                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -210,6 +226,55 @@ export function ProductForm() {
                 </div>
               </div>
             )}
+
+            <div className="space-y-4 border-t pt-4 mt-4">
+              <h3 className="font-semibold">Média és Fájlok</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormItem>
+                  <FormLabel>Termékkép {uploadingImage && "(Feltöltés...)"}</FormLabel>
+                  <FormControl>
+                    <Input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, "IMAGE")} disabled={uploadingImage} />
+                  </FormControl>
+                  <div className="mt-2 space-y-1">
+                    {currentMedia.filter(m => m.type === "IMAGE").map((m, i) => (
+                      <div key={i} className="text-xs text-green-600 truncate bg-green-100 p-1 rounded font-mono">{m.url}</div>
+                    ))}
+                  </div>
+                </FormItem>
+
+                <FormItem>
+                  <FormLabel>Hangfájl (.mp3) {uploadingAudio && "(Feltöltés...)"}</FormLabel>
+                  <FormControl>
+                    <Input type="file" accept="audio/mpeg" onChange={(e) => handleFileUpload(e, "AUDIO")} disabled={uploadingAudio} />
+                  </FormControl>
+                  <div className="mt-2 space-y-1">
+                    {currentMedia.filter(m => m.type === "AUDIO").map((m, i) => (
+                      <div key={i} className="text-xs text-green-600 truncate bg-green-100 p-1 rounded font-mono">{m.url}</div>
+                    ))}
+                  </div>
+                </FormItem>
+
+                <div className="space-y-2">
+                  <FormLabel>YouTube Link</FormLabel>
+                  <div className="flex gap-2">
+                    <Input id="yt-link" placeholder="https://youtube.com/watch?v=..." />
+                    <Button type="button" variant="outline" onClick={() => {
+                      const input = document.getElementById("yt-link") as HTMLInputElement;
+                      if (input && input.value) {
+                         const currentMedia = form.getValues("media") || [];
+                         form.setValue("media", [...currentMedia, { url: input.value, type: "YOUTUBE" }]);
+                         input.value = "";
+                      }
+                    }}>Hozzáad</Button>
+                  </div>
+                  <div className="mt-2 space-y-1">
+                    {currentMedia.filter(m => m.type === "YOUTUBE").map((m, i) => (
+                      <div key={i} className="text-xs text-green-600 truncate bg-green-100 p-1 rounded font-mono">{m.url}</div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <Button type="submit" className="w-full" disabled={isPending}>
               {isPending ? "Mentés..." : "Termék mentése"}

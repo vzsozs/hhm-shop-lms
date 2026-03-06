@@ -3,7 +3,7 @@ import { users } from "./auth";
 
 // Enumok a terméktípusokhoz, mediákhoz és rendelés státuszokhoz
 export const productTypeEnum = pgEnum("product_type", ["physical", "digital"]);
-export const mediaTypeEnum = pgEnum("media_type", ["image", "video", "sound"]);
+export const mediaTypeEnum = pgEnum("media_type", ["IMAGE", "YOUTUBE", "AUDIO"]);
 export const orderStatusEnum = pgEnum("order_status", ["pending", "paid", "shipped", "completed", "cancelled"]);
 
 export const products = pgTable("products", {
@@ -35,6 +35,9 @@ export const productMedia = pgTable("product_media", {
   productId: uuid("product_id").references(() => products.id, { onDelete: 'cascade' }).notNull(),
   url: varchar("url", { length: 500 }).notNull(),
   type: mediaTypeEnum("type").notNull(),
+  order: integer("order").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const orders = pgTable("orders", {

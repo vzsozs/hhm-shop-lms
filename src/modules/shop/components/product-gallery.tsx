@@ -43,7 +43,7 @@ export function ProductGallery({ media }: ProductGalleryProps) {
     <div className="flex flex-col gap-4">
       {/* Fő megjelenítő terület (Nagy kép vagy Videó vagy Audio) */}
       <div className="relative aspect-square sm:aspect-[4/3] rounded-xl overflow-hidden bg-muted border flex items-center justify-center shadow-sm">
-        {activeMedia?.type === "image" && (
+        {activeMedia?.type === "IMAGE" && (
           <Image
             src={activeMedia.url}
             alt="Termék fotó"
@@ -54,7 +54,7 @@ export function ProductGallery({ media }: ProductGalleryProps) {
           />
         )}
 
-        {activeMedia?.type === "video" && (
+        {activeMedia?.type === "YOUTUBE" && (
           <iframe
             src={getEmbeddedYoutubeUrl(activeMedia.url)}
             title="Video bemutató"
@@ -64,7 +64,7 @@ export function ProductGallery({ media }: ProductGalleryProps) {
           />
         )}
 
-        {activeMedia?.type === "sound" && (
+        {activeMedia?.type === "AUDIO" && (
           <div className="flex flex-col items-center justify-center p-6 w-full gap-6 bg-slate-900 h-full text-slate-100">
             <Music className="w-20 h-20 text-indigo-400 opacity-80" />
             <h3 className="font-semibold text-xl tracking-tight">Hangminta lejátszása</h3>
@@ -90,7 +90,7 @@ export function ProductGallery({ media }: ProductGalleryProps) {
                   : "border-transparent hover:border-muted-foreground/50 opacity-70 hover:opacity-100"
               )}
             >
-              {item.type === "image" && (
+              {item.type === "IMAGE" && (
                 <Image
                   src={item.url}
                   alt="Thumbnail"
@@ -99,12 +99,12 @@ export function ProductGallery({ media }: ProductGalleryProps) {
                   sizes="100px"
                 />
               )}
-              {item.type === "video" && (
+              {item.type === "YOUTUBE" && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/60">
                   <PlayCircle className="w-8 h-8 text-white" />
                 </div>
               )}
-              {item.type === "sound" && (
+              {item.type === "AUDIO" && (
                 <div className="absolute inset-0 flex items-center justify-center bg-indigo-950/80">
                   <Music className="w-8 h-8 text-indigo-300" />
                 </div>

@@ -45,7 +45,10 @@ export const productFormSchema = z.object({
   depth: rhfNumberField.refine(v => v >= 0, { message: "Nem lehet negatív!" }),
   
   // Média
-  imageUrl: z.string().url("Érvényes URL-t adj meg!").optional().or(z.literal("")),
+  media: z.array(z.object({
+    url: z.string().min(1),
+    type: z.enum(["IMAGE", "YOUTUBE", "AUDIO"]),
+  })).optional().default([]),
 
 }).superRefine((data, ctx) => {
   // Feltételes validáció fizikai termékeknél
@@ -87,7 +90,10 @@ export const createProductServerSchema = z.object({
   width: z.number().optional().default(0),
   height: z.number().optional().default(0),
   depth: z.number().optional().default(0),
-  imageUrl: z.string().url().optional().or(z.literal("")),
+  media: z.array(z.object({
+    url: z.string().min(1),
+    type: z.enum(["IMAGE", "YOUTUBE", "AUDIO"]),
+  })).optional().default([]),
   // Kategória azonosítók listája (opcionális)
   categoryIds: z.array(z.string().uuid()).optional().default([]),
 }).superRefine((data, ctx) => {

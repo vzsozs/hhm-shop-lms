@@ -30,7 +30,7 @@ export function useProductForm() {
       width: 0,
       height: 0,
       depth: 0,
-      imageUrl: "",
+      media: [],
     },
   });
 
@@ -59,7 +59,7 @@ export function useProductForm() {
       width: values.width,
       height: values.height,
       depth: values.depth,
-      imageUrl: values.imageUrl,
+      media: values.media,
       categoryIds: [], // Az admin form jelenlegi verziója nem kezeli, alapértelmezetten üres
     };
 

@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { products, productVariants, productMedia, productCategories, categories } from "@/db/schema";
-import { eq, ilike, and, sql, inArray } from "drizzle-orm";
+import { eq, ilike, and, sql, inArray, asc } from "drizzle-orm";
 
 export type ProductListFilters = {
   search?: string;
@@ -124,7 +124,8 @@ export type ProductVariantItem = {
 export type ProductMediaItem = {
   id: string;
   url: string;
-  type: "image" | "video" | "sound";
+  type: "IMAGE" | "YOUTUBE" | "AUDIO";
+  order: number;
 };
 
 export type ProductDetailItem = {
@@ -154,7 +155,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
 
   const [productVariantsData, productMediaData, productCategoriesData] = await Promise.all([
     db.select().from(productVariants).where(eq(productVariants.productId, productData.id)),
-    db.select().from(productMedia).where(eq(productMedia.productId, productData.id)),
+    db.select().from(productMedia).where(eq(productMedia.productId, productData.id)).orderBy(asc(productMedia.order)),
     db
       .select({
         id: categories.id,
@@ -188,7 +189,8 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
     media: productMediaData.map(m => ({
       id: m.id,
       url: m.url,
-      type: m.type as "image" | "video" | "sound",
+      type: m.type as "IMAGE" | "YOUTUBE" | "AUDIO",
+      order: m.order,
     })),
     categories: productCategoriesData.map(c => ({
       id: c.id,
@@ -212,7 +214,7 @@ export async function getProductById(id: string): Promise<ProductDetailItem | nu
 
   const [productVariantsData, productMediaData, productCategoriesData] = await Promise.all([
     db.select().from(productVariants).where(eq(productVariants.productId, id)),
-    db.select().from(productMedia).where(eq(productMedia.productId, id)),
+    db.select().from(productMedia).where(eq(productMedia.productId, id)).orderBy(asc(productMedia.order)),
     db
       .select({
         id: categories.id,
@@ -246,7 +248,8 @@ export async function getProductById(id: string): Promise<ProductDetailItem | nu
     media: productMediaData.map(m => ({
       id: m.id,
       url: m.url,
-      type: m.type as "image" | "video" | "sound",
+      type: m.type as "IMAGE" | "YOUTUBE" | "AUDIO",
+      order: m.order,
     })),
     categories: productCategoriesData.map(c => ({
       id: c.id,

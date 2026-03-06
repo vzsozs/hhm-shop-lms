@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { useProductForm, ProductFormValues } from "../hooks/use-product-form";
 import { Button } from "@/components/ui/button";

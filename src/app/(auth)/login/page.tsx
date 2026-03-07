@@ -5,13 +5,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { loginUser } from "@/modules/auth/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signIn } from "next-auth/react";
+import { CheckCircle2, AlertCircle } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.string().email("Kérlek, adj meg egy érvényes e-mail címet!"),
@@ -23,8 +24,12 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [googlePending, setGooglePending] = useState(false);
+  
+  const isVerified = searchParams.get("verified") === "true";
+  const errorParam = searchParams.get("error");
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -61,6 +66,26 @@ export default function LoginPage() {
         <h2 className="text-xl font-bold text-white mb-1">Bejelentkezés</h2>
         <p className="text-sm text-white/50">Lépj be a fiókodba a folytatáshoz.</p>
       </div>
+
+      {isVerified && (
+        <div className="bg-green-500/10 border border-green-500/20 text-green-400 p-4 rounded-xl flex items-start gap-3 text-sm">
+          <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
+          <p>Fiókodat sikeresen megerősítettük! Most már bejelentkezhetsz.</p>
+        </div>
+      )}
+
+      {errorParam && (
+        <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl flex items-start gap-3 text-sm">
+          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+          <p>
+            {errorParam === "TokenNotFound" && "A megerősítő link érvénytelen vagy már felhasználták."}
+            {errorParam === "TokenExpired" && "A megerősítő link lejárt. Kérlek, kérj újat."}
+            {errorParam === "EmailNotFound" && "A megerősítéshez tartozó fiók nem található."}
+            {errorParam === "InvalidToken" && "Hiányzó vagy érvénytelen azonosító."}
+            {errorParam === "Default" && "Hiba történt a megerősítés során."}
+          </p>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-2">

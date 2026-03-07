@@ -2,11 +2,14 @@
 
 import * as z from "zod";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { db } from "@/db";
-import { users, profiles } from "@/db/schema/auth";
+import { users, profiles, verificationTokens } from "@/db/schema/auth";
 import { eq } from "drizzle-orm";
-import { signIn } from "@/auth";
+import { signIn, auth } from "@/auth";
 import { AuthError } from "next-auth";
+import { revalidatePath } from "next/cache";
+import { sendWelcomeEmail } from "@/lib/email/email-service";
 
 const registerSchema = z.object({
   email: z.string().email("Kérlek, adj meg egy érvényes e-mail címet!"),
@@ -54,9 +57,32 @@ export async function registerUser(values: z.infer<typeof registerSchema>) {
         name: name,
         lang: "hu",
       });
+      
+      return newUser;
     });
 
-    return { success: "Sikeres regisztráció! Kérlek lépj be." };
+    // Cél URL generálás
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const verificationTokenBytes = crypto.randomBytes(32).toString("hex");
+    
+    // Elévülés: 24 óra múlva
+    const expires = new Date();
+    expires.setHours(expires.getHours() + 24);
+
+    await db.insert(verificationTokens).values({
+      identifier: email,
+      token: verificationTokenBytes,
+      expires: expires,
+    });
+
+    const verifyUrl = `${baseUrl}/api/auth/verify?token=${verificationTokenBytes}`;
+
+    // Üdvözlő e-mail küldése aszinkron a háttérben
+    sendWelcomeEmail(email, name, verifyUrl).catch((err) => {
+      console.error("Nem sikerült elküldeni az üdvözlő e-mailt a regisztráció után:", err);
+    });
+
+    return { success: "Sikeres regisztráció! Kérlek, erősítsd meg az e-mail címedet a kapott levélben." };
   } catch (error) {
     console.error("Hiba a regisztráció során:", error);
     return { error: "Váratlan hiba történt a regisztráció során." };
@@ -80,5 +106,34 @@ export async function loginUser(values: z.infer<typeof loginSchema>) {
       }
     }
     throw error;
+  }
+}
+
+export async function toggleUserRole(userId: string, newRole: "admin" | "user") {
+  try {
+    const session = await auth();
+    
+    // Jogosultság ellenőrzése
+    if (!session || session.user.role !== "admin") {
+      return { error: "Nincs jogosultságod ehhez a művelethez!" };
+    }
+
+    // Önvédelmi szabály: az aktuális felhasználó nem módosíthatja a saját jogát!
+    if (session.user.id === userId) {
+      return { error: "Nem módosíthatod a saját jogosultságodat!" };
+    }
+
+    // Szerepkör frissítése az adatbázisban
+    await db.update(users)
+      .set({ role: newRole, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+
+    // Cache frissítése a táblázathoz
+    revalidatePath("/admin/users");
+    
+    return { success: `Szerepkör sikeresen frissítve (${newRole})!` };
+  } catch (error) {
+    console.error("Hiba a jogosultság módosításakor:", error);
+    return { error: "Váratlan hiba történt a művelet során." };
   }
 }

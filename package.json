@@ -12,6 +12,8 @@
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.1",
     "@hookform/resolvers": "^5.2.2",
+    "@react-email/components": "^1.0.8",
+    "@react-email/render": "^2.0.4",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -25,6 +27,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-hook-form": "^7.71.2",
+    "resend": "^6.9.3",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
     "use-debounce": "^10.1.0",

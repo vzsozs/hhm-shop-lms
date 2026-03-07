@@ -8,24 +8,32 @@ export async function middleware(request: NextRequest) {
   const isAdminPath = request.nextUrl.pathname.startsWith("/admin");
   const isAuthPath = request.nextUrl.pathname.startsWith("/login") || request.nextUrl.pathname.startsWith("/register");
 
+  let response;
+
   if (isAdminPath) {
     if (!isLoggedIn) {
-      return NextResponse.redirect(new URL("/login", request.url));
-    }
-    if (session.user.role !== "admin") {
-      return NextResponse.redirect(new URL("/", request.url)); // Vagy csinálj egy 403-as sayfát
+      response = NextResponse.redirect(new URL("/login", request.url));
+    } else if (session.user.role !== "admin") {
+      response = NextResponse.redirect(new URL("/", request.url));
     }
   }
 
   // Ha be van jelentkezve, de login/register oldalon van, visszairányítjuk a főoldalra/adminra
-  if (isAuthPath && isLoggedIn) {
+  if (!response && isAuthPath && isLoggedIn) {
     if (session.user.role === "admin") {
-      return NextResponse.redirect(new URL("/admin", request.url));
+      response = NextResponse.redirect(new URL("/admin", request.url));
+    } else {
+      response = NextResponse.redirect(new URL("/", request.url));
     }
-    return NextResponse.redirect(new URL("/", request.url));
   }
 
-  return NextResponse.next();
+  if (!response) {
+    response = NextResponse.next();
+  }
+
+  // Dinamikus biztonsági fejlécek a böngésző cachelés megakadályozására
+  response.headers.set("Cache-Control", "no-store, max-age=0");
+  return response;
 }
 
 export const config = {

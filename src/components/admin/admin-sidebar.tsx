@@ -13,7 +13,9 @@ import {
   Settings,
   CreditCard,
   Globe,
+  LogOut,
 } from "lucide-react";
+import { signOut } from "next-auth/react";
 
 interface SidebarItem {
   title: string;
@@ -46,7 +48,7 @@ const sidebarGroups: SidebarGroup[] = [
     items: [
       { title: "Kurzusok", href: "/admin/courses", icon: <BookOpen size={20} /> },
       { title: "Vizsgák", href: "/admin/exams", icon: <Award size={20} /> },
-      { title: "Tanulók", href: "/admin/students", icon: <Users size={20} /> },
+      { title: "Felhasználók", href: "/admin/users", icon: <Users size={20} /> },
     ],
   },
   {
@@ -101,15 +103,23 @@ export function AdminSidebarContent() {
         ))}
       </nav>
       
-      <div className="mt-auto px-6 pt-6 border-t border-white/5">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-brand-orange/20 border border-brand-orange/30 flex items-center justify-center text-brand-orange font-bold">
-            A
+      <div className="mt-auto px-6 pt-6 border-t border-white/5 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-brand-orange/20 border border-brand-orange/30 flex items-center justify-center text-brand-orange font-bold">
+              A
+            </div>
+            <div>
+              <p className="text-sm font-medium text-white">Adminisztrátor</p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-medium text-white">Adminisztrátor</p>
-            <p className="text-xs text-brand-orange">admin@hhm.hu</p>
-          </div>
+          <button 
+            onClick={() => signOut({ callbackUrl: "/login", redirect: true })}
+            className="p-2 text-white/50 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+            title="Kijelentkezés"
+          >
+            <LogOut size={18} />
+          </button>
         </div>
       </div>
     </div>

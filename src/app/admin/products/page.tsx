@@ -13,11 +13,32 @@ import { ProductActions } from "./product-actions";
 
 import { db } from "@/db";
 import { products, productVariants, productMedia, productCategories, categories } from "@/db/schema/shop";
-import { eq, getTableColumns, sql, desc } from "drizzle-orm";
+import { eq, getTableColumns, sql, desc, asc } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminProductsPage() {
+export default async function AdminProductsPage({ searchParams }: { searchParams: Promise<{ sort?: string, order?: string }> }) {
+  const { sort, order } = await searchParams;
+  const isDesc = order === "desc";
+
+  // Alapértelmezett rendezés
+  let orderByClause = desc(products.createdAt);
+
+  if (sort === "name") {
+    orderByClause = isDesc ? desc(sql`${products.name}->>'hu'`) : asc(sql`${products.name}->>'hu'`);
+  } else if (sort === "date") {
+    orderByClause = isDesc ? desc(products.createdAt) : asc(products.createdAt);
+  } else if (sort === "price") {
+    orderByClause = isDesc ? desc(sql`MIN(${productVariants.priceHuf})`) : asc(sql`MIN(${productVariants.priceHuf})`);
+  } else if (sort === "priority") {
+    orderByClause = isDesc ? desc(products.priority) : asc(products.priority);
+  } else if (sort === "sku") {
+    orderByClause = isDesc ? desc(sql`MAX(${productVariants.sku})`) : asc(sql`MAX(${productVariants.sku})`);
+  } else if (sort === "category") {
+    orderByClause = isDesc ? desc(sql`(jsonb_agg(${categories.name})->0)->>'hu'`) : asc(sql`(jsonb_agg(${categories.name})->0)->>'hu'`);
+  } else if (sort === "status") {
+    orderByClause = isDesc ? desc(products.status) : asc(products.status);
+  }
   // Lekérdezzük a termékeket, első képet, kategóriákat és összesített készletet/árat
   const productsList = await db
     .select({
@@ -30,6 +51,8 @@ export default async function AdminProductsPage() {
       image: sql<string>`MAX(CASE WHEN ${productMedia.order} = 0 AND ${productMedia.type} = 'IMAGE' THEN ${productMedia.url} ELSE NULL END)`,
       // Kategória név
       categoryName: sql<Record<string, string>>`(jsonb_agg(${categories.name})->0)`,
+      // SKU
+      sku: sql<string>`MAX(${productVariants.sku})`,
     })
     .from(products)
     .leftJoin(productVariants, eq(products.id, productVariants.productId))
@@ -37,7 +60,19 @@ export default async function AdminProductsPage() {
     .leftJoin(productCategories, eq(products.id, productCategories.productId))
     .leftJoin(categories, eq(productCategories.categoryId, categories.id))
     .groupBy(products.id)
-    .orderBy(desc(products.createdAt));
+    .orderBy(orderByClause);
+
+  const SortLink = ({ column, children, align = "left" }: { column: string, children: React.ReactNode, align?: "left" | "right" | "center" }) => {
+    const isCurrent = sort === column;
+    const targetOrder = isCurrent && order === "asc" ? "desc" : "asc";
+    const justifyClass = align === "right" ? "justify-end" : align === "center" ? "justify-center" : "justify-start";
+    return (
+      <Link href={`?sort=${column}&order=${targetOrder}`} className={`flex items-center gap-1 hover:text-white/80 transition-colors w-full ${justifyClass}`}>
+        {children}
+        <ArrowUpDown className={`h-3.5 w-3.5 ${isCurrent ? 'text-brand-orange' : 'text-white/30'}`} />
+      </Link>
+    );
+  };
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-8 pb-12">
@@ -58,30 +93,26 @@ export default async function AdminProductsPage() {
             <TableRow className="border-b-white/10 hover:bg-transparent">
               <TableHead className="text-white/50 w-[80px]">Kép</TableHead>
               <TableHead className="text-white">
-                <button className="flex items-center gap-1 hover:text-white/80 transition-colors">
-                  Név
-                  <ArrowUpDown className="h-3.5 w-3.5 text-white/30" />
-                </button>
+                <SortLink column="name">Név</SortLink>
+              </TableHead>
+              <TableHead className="text-white text-right">
+                <SortLink column="date" align="right">Hozzáadva</SortLink>
+              </TableHead>
+              <TableHead className="text-white text-right">
+                <SortLink column="price" align="right">Ár (Tól)</SortLink>
+              </TableHead>
+              <TableHead className="text-white text-center">
+                <SortLink column="priority" align="center">Sorrend</SortLink>
               </TableHead>
               <TableHead className="text-white">
-                <button className="flex items-center gap-1 hover:text-white/80 transition-colors">
-                  Kategória
-                  <ArrowUpDown className="h-3.5 w-3.5 text-white/30" />
-                </button>
+                <SortLink column="sku">SKU</SortLink>
               </TableHead>
-              <TableHead className="text-white text-right">
-                <button className="flex items-center justify-end gap-1 hover:text-white/80 transition-colors w-full">
-                  Ár (Tól)
-                  <ArrowUpDown className="h-3.5 w-3.5 text-white/30" />
-                </button>
+              <TableHead className="text-white">
+                <SortLink column="category">Kategória</SortLink>
               </TableHead>
-              <TableHead className="text-white text-right">
-                <button className="flex items-center justify-end gap-1 hover:text-white/80 transition-colors w-full">
-                  Hozzáadva
-                  <ArrowUpDown className="h-3.5 w-3.5 text-white/30" />
-                </button>
+              <TableHead className="text-white text-center">
+                <SortLink column="status" align="center">Státusz</SortLink>
               </TableHead>
-              <TableHead className="text-white text-center">Státusz</TableHead>
               <TableHead className="text-white text-right">Műveletek</TableHead>
             </TableRow>
           </TableHeader>
@@ -105,9 +136,11 @@ export default async function AdminProductsPage() {
                     </div>
                   </TableCell>
                   <TableCell className="font-medium text-white">{nameHu}</TableCell>
-                  <TableCell className="text-white/70">{catNameHu}</TableCell>
-                  <TableCell className="text-right text-white font-medium">{priceDisp} Ft</TableCell>
                   <TableCell className="text-right text-white/70 text-sm whitespace-nowrap">{dateAdded}</TableCell>
+                  <TableCell className="text-right text-white font-medium">{priceDisp} Ft</TableCell>
+                  <TableCell className="text-center text-white/70">{product.priority}</TableCell>
+                  <TableCell className="text-white/70 font-mono text-sm">{product.sku || "-"}</TableCell>
+                  <TableCell className="text-white/70">{catNameHu}</TableCell>
                   <TableCell className="text-center">
                     {product.status === "ACTIVE" ? (
                       <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Aktív</Badge>
@@ -123,7 +156,7 @@ export default async function AdminProductsPage() {
             })}
             {productsList.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center text-white/50">
+                <TableCell colSpan={9} className="h-24 text-center text-white/50">
                   Nincsenek termékek az adatbázisban.
                 </TableCell>
               </TableRow>

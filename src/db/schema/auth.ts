@@ -4,6 +4,9 @@ import {
   varchar,
   timestamp,
   pgEnum,
+  text,
+  primaryKey,
+  integer,
 } from "drizzle-orm/pg-core";
 
 // Enumok a jogosultságokhoz és címtípusokhoz
@@ -11,13 +14,61 @@ export const roleEnum = pgEnum("role", ["admin", "user"]);
 export const addressTypeEnum = pgEnum("address_type", ["billing", "shipping"]);
 
 export const users = pgTable("users", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  email: varchar("email", { length: 255 }).notNull().unique(),
-  passwordHash: varchar("password_hash", { length: 255 }).notNull(),
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: varchar("name", { length: 255 }),
+  email: varchar("email", { length: 255 }).unique().notNull(),
+  emailVerified: timestamp("email_verified", { mode: "date" }),
+  image: varchar("image", { length: 255 }),
+  passwordHash: varchar("password_hash", { length: 255 }), // Lehet null, ha Google-el lép be
   role: roleEnum("role").default("user").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+// A NextAuth által használt accountok (pl. Google OAuth)
+export const accounts = pgTable(
+  "accounts",
+  {
+    userId: uuid("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: varchar("type", { length: 255 }).notNull(),
+    provider: varchar("provider", { length: 255 }).notNull(),
+    providerAccountId: varchar("providerAccountId", { length: 255 }).notNull(),
+    refresh_token: text("refresh_token"),
+    access_token: text("access_token"),
+    expires_at: integer("expires_at"),
+    token_type: varchar("token_type", { length: 255 }),
+    scope: varchar("scope", { length: 255 }),
+    id_token: text("id_token"),
+    session_state: varchar("session_state", { length: 255 }),
+  },
+  (account) => ({
+    compoundKey: primaryKey({
+      columns: [account.provider, account.providerAccountId],
+    }),
+  })
+);
+
+export const sessions = pgTable("sessions", {
+  sessionToken: varchar("sessionToken", { length: 255 }).primaryKey(),
+  userId: uuid("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  expires: timestamp("expires", { mode: "date" }).notNull(),
+});
+
+export const verificationTokens = pgTable(
+  "verificationToken",
+  {
+    identifier: varchar("identifier", { length: 255 }).notNull(),
+    token: varchar("token", { length: 255 }).notNull(),
+    expires: timestamp("expires", { mode: "date" }).notNull(),
+  },
+  (vt) => ({
+    compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
+  })
+);
 
 export const profiles = pgTable("profiles", {
   id: uuid("id").defaultRandom().primaryKey(),

@@ -32,13 +32,20 @@ export default function LoginPage() {
 
   const onSubmit = (values: LoginFormValues) => {
     startTransition(async () => {
-      const result = await loginUser(values);
-      if (result?.error) {
-        toast.error(result.error);
-      } else {
-        toast.success(result?.success || "Sikeres bejelentkezés!");
-        router.push("/");
-        router.refresh(); // Vissza kell frissíteni a layoutot hogy érzékelje a sessiont
+      try {
+        const result = await loginUser(values);
+        
+        // Ha van error üznet az AuthError miatt:
+        if (result?.error) {
+          toast.error(result.error);
+        } else if (result?.success) {
+          // Ha valamiért lefutna a redirect nélküli success ág
+          toast.success(result.success);
+          router.push("/");
+          router.refresh();
+        }
+      } catch (error) {
+        console.error("Login hiba:", error)
       }
     });
   };

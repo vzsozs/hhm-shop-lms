@@ -68,9 +68,7 @@ export async function loginUser(values: z.infer<typeof loginSchema>) {
     await signIn("credentials", {
       email: values.email,
       password: values.password,
-      redirect: false,
     });
-    
     return { success: "Sikeres bejelentkezés!" };
   } catch (error) {
     if (error instanceof AuthError) {

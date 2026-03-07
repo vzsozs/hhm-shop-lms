@@ -1,23 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
-import { createProduct } from "../actions";
+import { createProduct, updateProduct } from "../actions";
 import { productFormSchema } from "../schemas";
 
 export type ProductFormValues = z.infer<typeof productFormSchema>;
 
-export function useProductForm() {
+export function useProductForm(initialData?: Partial<ProductFormValues>, productId?: string) {
   const [isPending, setIsPending] = useState(false);
 
   const form = useForm<ProductFormValues>({
     // Ts-ignore a React Hook Form és Zod types inkompatibilitás miatt transzformációknál
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(productFormSchema) as any,
-    defaultValues: {
+    defaultValues: initialData || {
       type: "physical",
       name_hu: "",
       name_en: "",
@@ -30,13 +30,22 @@ export function useProductForm() {
       longDescription_hu: "",
       longDescription_en: "",
       longDescription_sk: "",
-      sku: "",
-      priceHuf: 0,
-      priceEur: 0,
-      weight: 0,
-      width: 0,
-      height: 0,
-      depth: 0,
+      variants: [{
+        name_hu: "",
+        name_en: "",
+        name_sk: "",
+        sku: "",
+        priceHuf: 0,
+        priceEur: 0,
+        stock: 0,
+        weight: 0,
+        width: 0,
+        height: 0,
+        depth: 0,
+      }],
+      specifications: [],
+      recommendations: [],
+      attachments: [],
       media: [],
       status: "ACTIVE",
       priority: 0,
@@ -45,7 +54,7 @@ export function useProductForm() {
     },
   });
 
-  const productType = form.watch("type");
+  const productType = useWatch({ control: form.control, name: "type" });
 
   async function onSubmit(values: ProductFormValues) {
     setIsPending(true);
@@ -73,13 +82,29 @@ export function useProductForm() {
         en: values.longDescription_en || "",
         sk: values.longDescription_sk || "",
       },
-      sku: values.sku,
-      priceHuf: values.priceHuf,
-      priceEur: values.priceEur,
-      weight: values.weight,
-      width: values.width,
-      height: values.height,
-      depth: values.depth,
+      variants: values.variants.map(v => ({
+        id: v.id,
+        name: {
+          hu: v.name_hu || "",
+          en: v.name_en || "",
+          sk: v.name_sk || "",
+        },
+        sku: v.sku,
+        priceHuf: v.priceHuf,
+        priceEur: v.priceEur,
+        stock: v.stock,
+        weight: v.weight,
+        width: v.width,
+        height: v.height,
+        depth: v.depth,
+      })),
+      specifications: values.specifications.map(s => ({
+        key_hu: s.key_hu, value_hu: s.value_hu,
+        key_en: s.key_en || "", value_en: s.value_en || "",
+        key_sk: s.key_sk || "", value_sk: s.value_sk || "",
+      })),
+      recommendations: values.recommendations,
+      attachments: values.attachments,
       media: values.media,
       status: values.status,
       priority: values.priority,
@@ -87,12 +112,16 @@ export function useProductForm() {
       categoryIds: values.categoryIds || [],
     };
 
-    const result = await createProduct(payload);
+    const result = productId 
+      ? await updateProduct(productId, payload)
+      : await createProduct(payload);
     setIsPending(false);
 
     if (result.success) {
-      toast.success("Termék sikeresen létrehozva!");
-      form.reset();
+      toast.success(productId ? "Termék sikeresen frissítve!" : "Termék sikeresen létrehozva!");
+      if (!productId) {
+        form.reset();
+      }
     } else {
       toast.error(result.error || "Hiba történt a mentés során.");
     }

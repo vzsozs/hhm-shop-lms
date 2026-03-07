@@ -16,24 +16,39 @@ export const products = pgTable("products", {
   description: jsonb("description"), // { hu: string, en: string, sk: string }
   shortDescription: jsonb("short_description"), // { hu: string, en: string, sk: string }
   longDescription: jsonb("long_description"), // { hu: string, en: string, sk: string }
-  specs: jsonb("specs"), // Rugalmas specifikációk JSON-ben
+  specifications: jsonb("specifications"), // Dinamikus JSONB specifikációk (kulcs-érték párok)
   type: productTypeEnum("type").default("physical").notNull(),
   status: productStatusEnum("status").default("ACTIVE").notNull(),
   priority: integer("priority").default(0).notNull(),
   layoutTemplate: varchar("layout_template", { length: 100 }).default("STANDARD").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const productVariants = pgTable("product_variants", {
   id: uuid("id").defaultRandom().primaryKey(),
   productId: uuid("product_id").references(() => products.id, { onDelete: 'cascade' }).notNull(),
+  name: jsonb("name"), // Variáció neve (pl. { hu: "Közepes méret" })
   sku: varchar("sku", { length: 100 }).unique().notNull(), // MuFis-hoz kötelező!
-  priceHuf: integer("price_huf"), // Főként forint alapú árazás
-  priceEur: decimal("price_eur", { precision: 10, scale: 2 }), // Kerekítések miatt decimal
+  priceHuf: integer("price_huf").notNull(), // Főként forint alapú árazás
+  priceEur: decimal("price_eur", { precision: 10, scale: 2 }).notNull(), // Kerekítések miatt decimal
   stock: integer("stock").default(0).notNull(),
   weight: decimal("weight", { precision: 10, scale: 2 }), // Logisztikához
   width: decimal("width", { precision: 10, scale: 2 }),
   height: decimal("height", { precision: 10, scale: 2 }),
   depth: decimal("depth", { precision: 10, scale: 2 }),
+});
+
+export const productRecommendations = pgTable("product_recommendations", {
+  productId: uuid("product_id").references(() => products.id, { onDelete: 'cascade' }).notNull(),
+  recommendedProductId: uuid("recommended_product_id").references(() => products.id, { onDelete: 'cascade' }).notNull(),
+});
+
+export const productAttachments = pgTable("product_attachments", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  productId: uuid("product_id").references(() => products.id, { onDelete: 'cascade' }).notNull(),
+  url: varchar("url", { length: 500 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
 });
 
 export const productMedia = pgTable("product_media", {

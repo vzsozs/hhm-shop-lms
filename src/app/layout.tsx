@@ -26,11 +26,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="hu">
+    <html lang="hu" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-admin-bg text-white`}
       >
-        <main>{children}</main>
+        <main className="min-h-screen relative">{children}</main>
         <Toaster position="top-center" richColors />
       </body>
     </html>

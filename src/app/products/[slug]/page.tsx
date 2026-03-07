@@ -72,11 +72,6 @@ export default async function ProductDetailPage(props: {
         <div className="flex flex-col space-y-8">
           {/* Termék Alapadatok */}
           <div>
-            {product.brand && (
-              <p className="text-sm font-semibold tracking-wider text-muted-foreground uppercase mb-2">
-                {product.brand}
-              </p>
-            )}
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
               {name}
             </h1>

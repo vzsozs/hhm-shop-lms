@@ -41,18 +41,40 @@ export const productFormSchema = z.object({
   longDescription_en: z.string().optional(),
   longDescription_sk: z.string().optional(),
   
-  // Árazás
-  priceHuf: rhfNumberField.refine(v => v >= 0, { message: "Nem lehet negatív!" }),
-  priceEur: rhfNumberField.refine(v => v >= 0, { message: "Nem lehet negatív!" }),
-  
-  // Variáns alap (MuFis)
-  sku: z.string().optional(),
-  
-  // Logisztika (Fizikai termékhez)
-  weight: rhfNumberField.refine(v => v >= 0, { message: "Nem lehet negatív!" }),
-  width: rhfNumberField.refine(v => v >= 0, { message: "Nem lehet negatív!" }),
-  height: rhfNumberField.refine(v => v >= 0, { message: "Nem lehet negatív!" }),
-  depth: rhfNumberField.refine(v => v >= 0, { message: "Nem lehet negatív!" }),
+  // Variációk és Logisztika
+  variants: z.array(z.object({
+    id: z.string().optional(),
+    name_hu: z.string().optional(),
+    name_en: z.string().optional(),
+    name_sk: z.string().optional(),
+    sku: z.string().min(1, "Az SKU kötelező"),
+    priceHuf: rhfNumberField.refine(v => v >= 0, { message: "Nem lehet negatív!" }),
+    priceEur: rhfNumberField.refine(v => v >= 0, { message: "Nem lehet negatív!" }),
+    stock: rhfNumberField.refine(v => v >= 0, { message: "Nem lehet negatív!" }),
+    weight: rhfNumberField.refine(v => v >= 0, { message: "Nem lehet negatív!" }),
+    width: rhfNumberField.refine(v => v >= 0, { message: "Nem lehet negatív!" }),
+    height: rhfNumberField.refine(v => v >= 0, { message: "Nem lehet negatív!" }),
+    depth: rhfNumberField.refine(v => v >= 0, { message: "Nem lehet negatív!" }),
+  })).min(1, "Legalább egy variáció kötelező!").default([]),
+
+  // Dinamikus Specifikációk
+  specifications: z.array(z.object({
+    key_hu: z.string().min(1, "Kulcs (HU) kötelező"),
+    value_hu: z.string().min(1, "Érték (HU) kötelező"),
+    key_en: z.string().optional().default(""),
+    value_en: z.string().optional().default(""),
+    key_sk: z.string().optional().default(""),
+    value_sk: z.string().optional().default(""),
+  })).optional().default([]),
+
+  // Ajánlott termékek azonosítói
+  recommendations: z.array(z.string().uuid()).optional().default([]),
+
+  // Csatolt dokumentumok
+  attachments: z.array(z.object({
+    url: z.string().min(1, "URL kötelező"),
+    name: z.string().min(1, "Fájlnév kötelező"),
+  })).optional().default([]),
   
   // Média
   media: z.array(z.object({
@@ -66,22 +88,17 @@ export const productFormSchema = z.object({
   categoryIds: z.array(z.string().uuid()).optional().default([]),
 
 }).superRefine((data, ctx) => {
-  // Feltételes validáció fizikai termékeknél
+  // Feltételes validáció fizikai termékeknél a variánsokon
   if (data.type === "physical") {
-    if (!data.sku || data.sku.length < 3) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Fizikai terméknél az SKU kötelező (min 3 karakter)!",
-        path: ["sku"],
-      });
-    }
-    if (!data.weight || data.weight <= 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Fizikai terméknél a súly megadása kötelező!",
-        path: ["weight"],
-      });
-    }
+    data.variants.forEach((variant, index) => {
+      if (!variant.weight || variant.weight <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Fizikai terméknél a súly megadása kötelező!",
+          path: ["variants", index, "weight"],
+        });
+      }
+    });
   }
 });
 
@@ -108,13 +125,35 @@ export const createProductServerSchema = z.object({
     en: z.string().optional().default(""),
     sk: z.string().optional().default(""),
   }),
-  sku: z.string().optional(),
-  priceHuf: z.number().min(0),
-  priceEur: z.number().min(0),
-  weight: z.number().optional().default(0),
-  width: z.number().optional().default(0),
-  height: z.number().optional().default(0),
-  depth: z.number().optional().default(0),
+  variants: z.array(z.object({
+    id: z.string().optional(),
+    name: z.object({
+      hu: z.string().optional().default(""),
+      en: z.string().optional().default(""),
+      sk: z.string().optional().default(""),
+    }),
+    sku: z.string(),
+    priceHuf: z.number().min(0),
+    priceEur: z.number().min(0),
+    stock: z.number().min(0),
+    weight: z.number().optional().default(0),
+    width: z.number().optional().default(0),
+    height: z.number().optional().default(0),
+    depth: z.number().optional().default(0),
+  })).min(1),
+  specifications: z.array(z.object({
+    key_hu: z.string(),
+    value_hu: z.string(),
+    key_en: z.string().optional().default(""),
+    value_en: z.string().optional().default(""),
+    key_sk: z.string().optional().default(""),
+    value_sk: z.string().optional().default(""),
+  })).optional().default([]),
+  recommendations: z.array(z.string().uuid()).optional().default([]),
+  attachments: z.array(z.object({
+    url: z.string(),
+    name: z.string(),
+  })).optional().default([]),
   media: z.array(z.object({
     url: z.string().min(1),
     type: z.enum(["IMAGE", "YOUTUBE", "AUDIO"]),
@@ -126,22 +165,17 @@ export const createProductServerSchema = z.object({
   priority: z.number().optional().default(0),
   layoutTemplate: z.enum(["STANDARD", "VIDEO_CENTERED", "DOCUMENTARY"]).default("STANDARD"),
 }).superRefine((data, ctx) => {
-  // Szerveroldali biztonsági validáció
+  // Szerveroldali biztonsági validáció fizikai termékeknél
   if (data.type === "physical") {
-    if (!data.sku || data.sku.length < 3) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Fizikai terméknél az SKU kötelező!",
-        path: ["sku"],
-      });
-    }
-    if (data.weight === undefined || data.weight <= 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Fizikai terméknél a súly kötelező!",
-        path: ["weight"],
-      });
-    }
+    data.variants.forEach((variant, index) => {
+      if (variant.weight === undefined || variant.weight <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Fizikai terméknél a súly kötelező!",
+          path: ["variants", index, "weight"],
+        });
+      }
+    });
   }
 });
 

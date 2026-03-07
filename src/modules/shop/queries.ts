@@ -1,6 +1,6 @@
 import { db } from "@/db";
-import { products, productVariants, productMedia, productCategories, categories } from "@/db/schema";
-import { eq, ilike, and, sql, inArray, asc } from "drizzle-orm";
+import { products, productVariants, productMedia, productCategories, categories, productRecommendations, productAttachments } from "@/db/schema";
+import { eq, and, sql, inArray, asc } from "drizzle-orm";
 
 export type ProductListFilters = {
   search?: string;
@@ -62,13 +62,15 @@ export async function getActiveProducts(filters?: ProductListFilters): Promise<P
     .leftJoin(productMedia, eq(products.id, productMedia.productId));
 
   if (conditions.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     baseQuery = baseQuery.where(and(...conditions)) as any;
   }
   
-  // Futtatás (a groupBy-t is figyelembe véve)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rawResults = await (baseQuery.groupBy(products.id) as any);
 
   // Most lekérjük az összes érintett termék kategóriáját Map-be
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const productIds = rawResults.map((r: any) => r.id);
   const categoriesMap = new Map<string, { id: string; name: Record<string, string>; slug: string }[]>();
 
@@ -84,13 +86,13 @@ export async function getActiveProducts(filters?: ProductListFilters): Promise<P
 
     for (const row of rawCategories) {
       const existing = categoriesMap.get(row.productId) || [];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      existing.push(row.category as any);
+      existing.push(row.category as unknown as { id: string; name: Record<string, string>; slug: string; });
       categoriesMap.set(row.productId, existing);
     }
   }
 
   // Formázás és visszatérés
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return rawResults.map((r: any) => ({
     ...r,
     name: r.name as Record<string, string>,
@@ -106,6 +108,19 @@ export async function getAllCategories() {
     id: c.id,
     name: c.name as Record<string, string>,
     slug: c.slug
+  }));
+}
+
+// Segédfüggvény a termékajánlások listájához
+export async function getAllProductsForSelect() {
+  const allProds = await db.select({
+    id: products.id,
+    name: products.name,
+  }).from(products).where(eq(products.status, 'ACTIVE'));
+  
+  return allProds.map(p => ({
+    id: p.id,
+    name: p.name as Record<string, string>,
   }));
 }
 
@@ -132,13 +147,14 @@ export type ProductDetailItem = {
   id: string;
   slug: string; // SEO-barát URL azonosító
   name: Record<string, string>;
-  brand: string | null;
   description: Record<string, string> | null;
-  specs: Record<string, any> | null;
+  specifications: Record<string, unknown> | null;
   type: "physical" | "digital";
   variants: ProductVariantItem[];
   media: ProductMediaItem[];
   categories: { id: string; name: Record<string, string>; slug: string }[];
+  recommendations?: string[];
+  attachments?: { id: string; url: string; name: string }[];
 };
 
 // Termék lekérdezése slug alapján (publikus termékoldalhoz)
@@ -171,9 +187,8 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
     id: productData.id,
     slug: productData.slug,
     name: productData.name as Record<string, string>,
-    brand: productData.brand,
     description: productData.description as Record<string, string> | null,
-    specs: productData.specs as Record<string, any> | null,
+    specifications: productData.specifications as Record<string, unknown> | null,
     type: productData.type as "physical" | "digital",
     variants: productVariantsData.map(v => ({
       id: v.id,
@@ -212,7 +227,13 @@ export async function getProductById(id: string): Promise<ProductDetailItem | nu
     return null;
   }
 
-  const [productVariantsData, productMediaData, productCategoriesData] = await Promise.all([
+  const [
+    productVariantsData, 
+    productMediaData, 
+    productCategoriesData,
+    productRecommendationsData,
+    productAttachmentsData
+  ] = await Promise.all([
     db.select().from(productVariants).where(eq(productVariants.productId, id)),
     db.select().from(productMedia).where(eq(productMedia.productId, id)).orderBy(asc(productMedia.order)),
     db
@@ -224,15 +245,18 @@ export async function getProductById(id: string): Promise<ProductDetailItem | nu
       .from(productCategories)
       .innerJoin(categories, eq(productCategories.categoryId, categories.id))
       .where(eq(productCategories.productId, id)),
+    db.select().from(productRecommendations)
+      .where(eq(productRecommendations.productId, id)),
+    db.select().from(productAttachments)
+      .where(eq(productAttachments.productId, id)),
   ]);
 
   return {
     id: productData.id,
     slug: productData.slug,
     name: productData.name as Record<string, string>,
-    brand: productData.brand,
     description: productData.description as Record<string, string> | null,
-    specs: productData.specs as Record<string, any> | null,
+    specifications: productData.specifications as Record<string, unknown> | null,
     type: productData.type as "physical" | "digital",
     variants: productVariantsData.map(v => ({
       id: v.id,
@@ -255,6 +279,12 @@ export async function getProductById(id: string): Promise<ProductDetailItem | nu
       id: c.id,
       name: c.name as Record<string, string>,
       slug: c.slug,
+    })),
+    recommendations: productRecommendationsData.map(r => r.recommendedProductId),
+    attachments: productAttachmentsData.map(a => ({
+      id: a.id,
+      url: a.url,
+      name: a.name,
     })),
   };
 }

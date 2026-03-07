@@ -35,4 +35,5 @@ export const authConfig = {
   },
   providers: [], // Beállítás a main auth.ts-ben
   session: { strategy: "jwt" }, // JWT szükséges a middleware miatt
+  trustHost: true,
 } satisfies NextAuthConfig;

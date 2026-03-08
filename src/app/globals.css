@@ -48,6 +48,16 @@
   --color-brand-orange: var(--brand-orange);
   --color-admin-bg: var(--admin-bg);
   --color-card-bg: var(--card-bg);
+  --color-brand-black: var(--brand-black);
+  --color-brand-brown: var(--brand-brown);
+  --color-brand-sienna: var(--brand-sienna);
+  --color-brand-bronze-light: var(--brand-bronze-light);
+  --color-brand-bronze: var(--brand-bronze);
+  --color-brand-lightbg: var(--brand-lightbg);
+  --color-brand-white: var(--brand-white);
+  --font-cormorant: var(--font-cormorant);
+  --font-playfair: var(--font-playfair);
+  --font-montserrat: var(--font-montserrat);
 }
 
 :root {
@@ -86,6 +96,13 @@
   --brand-orange: #ff4e00;
   --admin-bg: #212529;
   --card-bg: #1a1d20;
+  --brand-black: #221616;
+  --brand-brown: #6d4545;
+  --brand-sienna: #b45942;
+  --brand-bronze-light: #d6c3af;
+  --brand-bronze: #897863;
+  --brand-lightbg: #f8f7f5;
+  --brand-white: #ffffff;
 }
 
 .dark {
@@ -123,6 +140,13 @@
   --brand-orange: #ff4e00;
   --admin-bg: #212529;
   --card-bg: #1a1d20;
+  --brand-black: #221616;
+  --brand-brown: #6d4545;
+  --brand-sienna: #b45942;
+  --brand-bronze-light: #d6c3af;
+  --brand-bronze: #897863;
+  --brand-lightbg: #f8f7f5;
+  --brand-white: #ffffff;
 }
 
 @layer base {

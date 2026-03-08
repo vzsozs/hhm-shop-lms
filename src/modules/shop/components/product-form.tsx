@@ -178,7 +178,7 @@ export function ProductForm({ categories = [], products = [], initialData, produ
                     <FormLabel className={styles.label}>Termék típusa</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger className={styles.inputWrapper}>
+                        <SelectTrigger className={`${styles.inputWrapper} h-11`}>
                           <SelectValue placeholder="Válassz típust" />
                         </SelectTrigger>
                       </FormControl>
@@ -199,7 +199,7 @@ export function ProductForm({ categories = [], products = [], initialData, produ
                       <FormLabel className={styles.label}>Layout sablon</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger className={styles.inputWrapper}>
+                          <SelectTrigger className={`${styles.inputWrapper} h-11`}>
                             <SelectValue placeholder="Válassz sablont" />
                           </SelectTrigger>
                         </FormControl>
@@ -220,7 +220,7 @@ export function ProductForm({ categories = [], products = [], initialData, produ
                   <FormItem className={styles.sectionContent}>
                     <FormLabel className={styles.label}>Sorrend</FormLabel>
                     <FormControl>
-                      <Input type="number" className={`${styles.inputWrapper} ${styles.input}`} {...field} />
+                      <Input type="number" className={`${styles.inputWrapper} ${styles.input} h-11`} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

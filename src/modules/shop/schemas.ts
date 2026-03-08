@@ -48,8 +48,8 @@ export const productFormSchema = z.object({
     name_en: z.string().optional(),
     name_sk: z.string().optional(),
     sku: z.string().min(1, "Az SKU kötelező"),
-    priceHuf: rhfNumberField.refine(v => v >= 0, { message: "Nem lehet negatív!" }),
-    priceEur: rhfNumberField.refine(v => v >= 0, { message: "Nem lehet negatív!" }),
+    priceHuf: rhfNumberField.refine(v => v > 0, { message: "Az árnak nagyobbnak kell lennie 0-nál!" }),
+    priceEur: rhfNumberField.refine(v => v > 0, { message: "Az árnak nagyobbnak kell lennie 0-nál!" }),
     stock: rhfNumberField.refine(v => v >= 0, { message: "Nem lehet negatív!" }),
     weight: rhfNumberField.refine(v => v >= 0, { message: "Nem lehet negatív!" }),
     width: rhfNumberField.refine(v => v >= 0, { message: "Nem lehet negatív!" }),
@@ -133,8 +133,8 @@ export const createProductServerSchema = z.object({
       sk: z.string().optional().default(""),
     }),
     sku: z.string(),
-    priceHuf: z.number().min(0),
-    priceEur: z.number().min(0),
+    priceHuf: z.number().positive(),
+    priceEur: z.number().positive(),
     stock: z.number().min(0),
     weight: z.number().optional().default(0),
     width: z.number().optional().default(0),
@@ -180,3 +180,30 @@ export const createProductServerSchema = z.object({
 });
 
 export type CreateProductPayload = z.infer<typeof createProductServerSchema>;
+
+// --- 4. Kategória Séma (Új) ---
+export const categoryFormSchema = z.object({
+  id: z.string().optional(),
+  name_hu: z.string().min(2, "A kategória neve kötelező!"),
+  name_en: z.string().optional(),
+  name_sk: z.string().optional(),
+  description_hu: z.string().optional(),
+  description_en: z.string().optional(),
+  description_sk: z.string().optional(),
+  slug: z.string().min(2, "A slug kötelező!"),
+  parentId: z.string().uuid("Érvénytelen szülő kategória").optional().nullable().or(z.literal("")).or(z.literal("none")),
+});
+export type CategoryFormValues = z.infer<typeof categoryFormSchema>;
+
+export const categoryServerSchema = z.object({
+  id: z.string().optional(),
+  name: i18nStringSchema,
+  description: z.object({
+    hu: z.string().optional().default(""),
+    en: z.string().optional().default(""),
+    sk: z.string().optional().default(""),
+  }),
+  slug: z.string().min(2),
+  parentId: z.string().uuid().optional().nullable().or(z.literal("")).or(z.literal("none")).transform(val => (val === "" || val === "none") ? null : val),
+});
+export type CategoryServerPayload = z.infer<typeof categoryServerSchema>;

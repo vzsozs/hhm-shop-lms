@@ -112,11 +112,11 @@ export default async function AdminDashboardPage() {
           <table className="w-full text-left border-collapse min-w-[600px]">
             <thead>
               <tr className="border-b border-white/10 text-sm text-white/40">
-                <th className="pb-3 font-medium">Termék</th>
-                <th className="pb-3 font-medium">Kategória</th>
-                <th className="pb-3 font-medium">Ár</th>
-                <th className="pb-3 font-medium">Készlet</th>
-                <th className="pb-3 font-medium text-right">Művelet</th>
+                <th className="px-6 py-4 font-medium">Termék</th>
+                <th className="px-6 py-4 font-medium">Kategória</th>
+                <th className="px-6 py-4 font-medium">Ár</th>
+                <th className="px-6 py-4 font-medium">Készlet</th>
+                <th className="px-6 py-4 font-medium text-right">Művelet</th>
               </tr>
             </thead>
             <tbody className="text-sm">
@@ -127,7 +127,7 @@ export default async function AdminDashboardPage() {
                 
                 return (
                   <tr key={product.id} className="border-b border-white/5 hover:bg-white/5 transition-colors group">
-                    <td className="py-4">
+                    <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 bg-white/10 rounded-lg flex items-center justify-center text-white/30 shrink-0 overflow-hidden relative">
                           {product.image ? (
@@ -142,16 +142,16 @@ export default async function AdminDashboardPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="py-4 text-white/70">{catNameHu}</td>
-                    <td className="py-4 text-white font-medium">{priceDisp} Ft</td>
-                    <td className="py-4">
+                    <td className="px-6 py-4 text-white/70">{catNameHu}</td>
+                    <td className="px-6 py-4 text-white font-medium">{priceDisp} Ft</td>
+                    <td className="px-6 py-4">
                       {product.status === "ACTIVE" ? (
                         <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Aktív</Badge>
                       ) : (
                         <Badge variant="outline" className="bg-white/10 text-white/60 border-white/20">Piszkozat</Badge>
                       )}
                     </td>
-                    <td className="py-2 text-right">
+                    <td className="px-6 py-4 text-right">
                       <ProductActions productId={product.id} />
                     </td>
                   </tr>

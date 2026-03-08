@@ -1,4 +1,4 @@
-import { drizzle } from "drizzle-orm/node-postgres";
+
 import { resolve } from "path";
 import { config } from "dotenv";
 import { Client } from "pg";

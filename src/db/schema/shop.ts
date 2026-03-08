@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, integer, decimal, jsonb, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, integer, decimal, jsonb, pgEnum, AnyPgColumn } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 
 // Enumok a terméktípusokhoz, mediákhoz és rendelés státuszokhoz
@@ -90,7 +90,9 @@ export const coupons = pgTable("coupons", {
 
 export const categories = pgTable("categories", {
   id: uuid("id").defaultRandom().primaryKey(),
+  parentId: uuid("parent_id").references((): AnyPgColumn => categories.id, { onDelete: 'set null' }),
   name: jsonb("name").notNull(), // { hu: string, en: string, sk: string }
+  description: jsonb("description"), // { hu: string, en: string, sk: string }
   slug: varchar("slug", { length: 255 }).unique().notNull(),
 });
 

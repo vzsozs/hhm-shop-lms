@@ -1,6 +1,6 @@
 export const productFormStyles = {
   // Alap hátterek és elrendezés
-  container: "w-full max-w-3xl mx-auto bg-admin-bg border-none text-white",
+  container: "w-full bg-admin-bg border-none text-white",
   cardHeader: "flex flex-row items-center justify-between pb-4 border-b border-white/5",
   cardTitle: "text-xl font-bold text-white",
   

@@ -35,7 +35,7 @@ export default async function AdminProductsPage({ searchParams }: { searchParams
   } else if (sort === "sku") {
     orderByClause = isDesc ? desc(sql`MAX(${productVariants.sku})`) : asc(sql`MAX(${productVariants.sku})`);
   } else if (sort === "category") {
-    orderByClause = isDesc ? desc(sql`(jsonb_agg(${categories.name})->0)->>'hu'`) : asc(sql`(jsonb_agg(${categories.name})->0)->>'hu'`);
+    orderByClause = isDesc ? desc(sql`(jsonb_agg(${categories.name} ORDER BY ${categories.parentId} NULLS LAST)->0)->>'hu'`) : asc(sql`(jsonb_agg(${categories.name} ORDER BY ${categories.parentId} NULLS LAST)->0)->>'hu'`);
   } else if (sort === "status") {
     orderByClause = isDesc ? desc(products.status) : asc(products.status);
   }
@@ -49,8 +49,8 @@ export default async function AdminProductsPage({ searchParams }: { searchParams
       stock: sql<number>`SUM(${productVariants.stock})`,
       // Elsődleges kép (ahol order = 0)
       image: sql<string>`MAX(CASE WHEN ${productMedia.order} = 0 AND ${productMedia.type} = 'IMAGE' THEN ${productMedia.url} ELSE NULL END)`,
-      // Kategória név
-      categoryName: sql<Record<string, string>>`(jsonb_agg(${categories.name})->0)`,
+      // Kategória név - NULLS LAST miatt a szülővel rendelkezők (alkategóriák) kerülnek előre
+      categoryName: sql<Record<string, string>>`(jsonb_agg(${categories.name} ORDER BY ${categories.parentId} NULLS LAST)->0)`,
       // SKU
       sku: sql<string>`MAX(${productVariants.sku})`,
     })
@@ -105,9 +105,6 @@ export default async function AdminProductsPage({ searchParams }: { searchParams
                 <SortLink column="priority" align="center">Sorrend</SortLink>
               </TableHead>
               <TableHead className="text-white">
-                <SortLink column="sku">SKU</SortLink>
-              </TableHead>
-              <TableHead className="text-white">
                 <SortLink column="category">Kategória</SortLink>
               </TableHead>
               <TableHead className="text-white text-center">
@@ -135,11 +132,12 @@ export default async function AdminProductsPage({ searchParams }: { searchParams
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="font-medium text-white">{nameHu}</TableCell>
+                  <TableCell className="font-medium text-white">
+                    <div className="truncate max-w-[200px] md:max-w-[250px]" title={nameHu}>{nameHu}</div>
+                  </TableCell>
                   <TableCell className="text-right text-white/70 text-sm whitespace-nowrap">{dateAdded}</TableCell>
                   <TableCell className="text-right text-white font-medium">{priceDisp} Ft</TableCell>
                   <TableCell className="text-center text-white/70">{product.priority}</TableCell>
-                  <TableCell className="text-white/70 font-mono text-sm">{product.sku || "-"}</TableCell>
                   <TableCell className="text-white/70">{catNameHu}</TableCell>
                   <TableCell className="text-center">
                     {product.status === "ACTIVE" ? (
@@ -156,7 +154,7 @@ export default async function AdminProductsPage({ searchParams }: { searchParams
             })}
             {productsList.length === 0 && (
               <TableRow>
-                <TableCell colSpan={9} className="h-24 text-center text-white/50">
+                <TableCell colSpan={8} className="h-24 text-center text-white/50">
                   Nincsenek termékek az adatbázisban.
                 </TableCell>
               </TableRow>

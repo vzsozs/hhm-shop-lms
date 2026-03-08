@@ -91,9 +91,15 @@ export async function registerUser(values: z.infer<typeof registerSchema>) {
 
 export async function loginUser(values: z.infer<typeof loginSchema>) {
   try {
+    const validatedFields = loginSchema.safeParse(values);
+
+    if (!validatedFields.success) {
+      return { error: "Hibás adatok formátuma!" };
+    }
+
     await signIn("credentials", {
-      email: values.email,
-      password: values.password,
+      email: validatedFields.data.email,
+      password: validatedFields.data.password,
     });
     return { success: "Sikeres bejelentkezés!" };
   } catch (error) {
@@ -135,5 +141,48 @@ export async function toggleUserRole(userId: string, newRole: "admin" | "user") 
   } catch (error) {
     console.error("Hiba a jogosultság módosításakor:", error);
     return { error: "Váratlan hiba történt a művelet során." };
+  }
+}
+
+export async function deleteUser(userId: string) {
+  try {
+    const session = await auth();
+
+    // 1. Jogosultság ellenőrzése (csak admin)
+    if (!session || session.user.role !== "admin") {
+      return { error: "Nincs jogosultságod a felhasználó törléséhez!" };
+    }
+
+    // 2. Önvédelem (admin nem törölheti saját magát)
+    if (session.user.id === userId) {
+      return { error: "Biztonsági okokból nem törölheted a saját fiókodat!" };
+    }
+
+    // Létrehozunk egy tranzakciót a tokenek és a felhasználó törléséhez
+    await db.transaction(async (tx) => {
+      // 3. Felhasználó lekérése, hogy megkapjuk az email címét a token törléshez
+      const userToDelete = await tx.query.users.findFirst({
+        where: eq(users.id, userId),
+      });
+
+      if (!userToDelete) {
+        throw new Error("A felhasználó nem található!");
+      }
+
+      // 4. Tokenek törlése az email cím (identifier) alapján
+      await tx.delete(verificationTokens)
+        .where(eq(verificationTokens.identifier, userToDelete.email));
+
+      // 5. Felhasználó törlése (Profiles, Addresses stb. CASCADE törléssel automatikusan el lesznek távolítva)
+      await tx.delete(users).where(eq(users.id, userId));
+    });
+
+    // Táblázat újratöltése a kliens oldalon
+    revalidatePath("/admin/users");
+
+    return { success: "Célpont megsemmisítve! (A felhasználó és adatai törlésre kerültek)" };
+  } catch (error) {
+    console.error("Hiba a felhasználó törlésekor:", error);
+    return { error: "Váratlan hiba történt a törlés során." };
   }
 }

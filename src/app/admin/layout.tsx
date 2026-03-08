@@ -2,11 +2,14 @@ import { ReactNode } from "react";
 import { DesktopSidebar, AdminSidebarContent } from "@/components/admin/admin-sidebar";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
+import { auth } from "@/auth";
 
-export default function AdminLayout({ children }: { children: ReactNode }) {
+export default async function AdminLayout({ children }: { children: ReactNode }) {
+  const session = await auth();
+  const userName = session?.user?.name || "Kezelő";
   return (
     <div className="fixed inset-0 flex w-full bg-admin-bg text-white overflow-hidden dark">
-      <DesktopSidebar />
+      <DesktopSidebar userName={userName} />
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Mobile Header with Hamburger Menu */}
         <header className="lg:hidden flex items-center p-4 border-b border-white/5 bg-admin-bg">
@@ -18,7 +21,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             </SheetTrigger>
             <SheetContent side="left" className="p-0 border-r-0 bg-admin-bg w-72">
               <SheetTitle className="sr-only">Navigációs menü</SheetTitle>
-              <AdminSidebarContent />
+              <AdminSidebarContent userName={userName} />
             </SheetContent>
           </Sheet>
           <span className="font-bold font-mono tracking-tighter text-white">

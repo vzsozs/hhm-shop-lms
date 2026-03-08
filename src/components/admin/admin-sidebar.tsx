@@ -48,12 +48,12 @@ const sidebarGroups: SidebarGroup[] = [
     items: [
       { title: "Kurzusok", href: "/admin/courses", icon: <BookOpen size={20} /> },
       { title: "Vizsgák", href: "/admin/exams", icon: <Award size={20} /> },
-      { title: "Felhasználók", href: "/admin/users", icon: <Users size={20} /> },
     ],
   },
   {
     label: "Beállítások",
     items: [
+      { title: "Felhasználók", href: "/admin/users", icon: <Users size={20} /> },
       { title: "Stripe", href: "/admin/stripe", icon: <CreditCard size={20} /> },
       { title: "Fordítások", href: "/admin/translations", icon: <Globe size={20} /> },
       { title: "Általános", href: "/admin/settings", icon: <Settings size={20} /> },
@@ -61,8 +61,9 @@ const sidebarGroups: SidebarGroup[] = [
   },
 ];
 
-export function AdminSidebarContent() {
+export function AdminSidebarContent({ userName = "Adminisztrátor" }: { userName?: string | null }) {
   const pathname = usePathname();
+  const initial = userName ? userName.charAt(0).toUpperCase() : "A";
 
   return (
     <div className="flex flex-col h-full bg-admin-bg border-r border-white/5 py-6">
@@ -107,10 +108,10 @@ export function AdminSidebarContent() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-brand-orange/20 border border-brand-orange/30 flex items-center justify-center text-brand-orange font-bold">
-              A
+              {initial}
             </div>
             <div>
-              <p className="text-sm font-medium text-white">Adminisztrátor</p>
+              <p className="text-sm font-medium text-white">{userName}</p>
             </div>
           </div>
           <button 
@@ -126,11 +127,10 @@ export function AdminSidebarContent() {
   );
 }
 
-// Opcionális asztali burkoló
-export function DesktopSidebar() {
+export function DesktopSidebar({ userName }: { userName?: string | null }) {
   return (
     <aside className="hidden lg:flex w-64 flex-col h-screen sticky top-0">
-      <AdminSidebarContent />
+      <AdminSidebarContent userName={userName} />
     </aside>
   );
 }

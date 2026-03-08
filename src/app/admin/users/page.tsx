@@ -12,10 +12,14 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { UserActions } from "./user-actions";
 import { TestEmailButton } from "./test-email-button";
+import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminUsersPage() {
+  const session = await auth();
+  const currentUserId = session?.user?.id;
+  
   const usersList = await db
     .select({
       id: users.id,
@@ -33,7 +37,7 @@ export default async function AdminUsersPage() {
     <div className="w-full max-w-7xl mx-auto space-y-8 pb-12">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Felhasználók</h1>
+          <h1 className="text-2xl font-bold text-white">Felhasználók</h1>
           <p className="text-white/50 mt-1">Az összes regisztrált Shop és LMS fiók kezelése.</p>
         </div>
         <TestEmailButton />
@@ -93,7 +97,7 @@ export default async function AdminUsersPage() {
                     </TableCell>
                     <TableCell className="text-right text-white/70 text-sm whitespace-nowrap">{dateAdded}</TableCell>
                     <TableCell className="text-right">
-                      <UserActions userId={user.id} currentRole={user.role} />
+                      <UserActions userId={user.id} currentRole={user.role} currentUserId={currentUserId} />
                     </TableCell>
                   </TableRow>
                 );

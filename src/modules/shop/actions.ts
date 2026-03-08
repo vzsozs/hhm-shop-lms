@@ -397,4 +397,75 @@ export async function duplicateProduct(id: string) {
   }
 }
 
+import { generateCategorySlug } from "@/lib/utils";
 
+async function ensureUniqueCategorySlug(baseSlug: string, excludeId?: string): Promise<string> {
+  let slug = baseSlug;
+  let counter = 2;
+  while (true) {
+    const query = db
+      .select({ id: categories.id })
+      .from(categories)
+      .where(eq(categories.slug, slug))
+      .limit(1);
+    
+    const [existing] = await query;
+    if (!existing || existing.id === excludeId) break;
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+  return slug;
+}
+
+import { categories } from "@/db/schema/shop";
+import { CategoryServerPayload, categoryServerSchema } from "./schemas";
+
+export async function upsertCategory(formData: CategoryServerPayload) {
+  try {
+    const validated = categoryServerSchema.parse(formData);
+    const baseSlug = generateCategorySlug(validated.slug || validated.name.hu);
+    const slug = await ensureUniqueCategorySlug(baseSlug, validated.id);
+
+    if (validated.id) {
+      // Update
+      await db.update(categories)
+        .set({
+          name: validated.name as Record<string, string>,
+          description: validated.description as Record<string, string>,
+          slug,
+          parentId: validated.parentId,
+        })
+        .where(eq(categories.id, validated.id));
+    } else {
+      // Create
+      await db.insert(categories)
+        .values({
+          name: validated.name as Record<string, string>,
+          description: validated.description as Record<string, string>,
+          slug,
+          parentId: validated.parentId,
+        });
+    }
+
+    revalidatePath("/admin/categories");
+    return { success: true };
+  } catch (error) {
+    console.error("Hiba a kategória mentésekor:", error);
+    if (error instanceof z.ZodError) {
+      return { success: false, error: error.issues[0]?.message || "Validációs hiba" };
+    }
+    return { success: false, error: "Váratlan hiba történt az adatnyilvántartásban." };
+  }
+}
+
+export async function deleteCategory(id: string) {
+  try {
+    // A delete cascade-ok és set null-ok a DB-ben történnek.
+    await db.delete(categories).where(eq(categories.id, id));
+    revalidatePath("/admin/categories");
+    return { success: true };
+  } catch(error) {
+    console.error("Hiba a kategória törlésekor:", error);
+    return { success: false, error: "Nem sikerült törölni a kategóriát." };
+  }
+}

@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { products, productVariants, productMedia, productCategories, categories, productRecommendations, productAttachments } from "@/db/schema";
+import { products, productVariants, productMedia, productCategories, categories, productRecommendations, productAttachments, productGroups } from "@/db/schema";
 import { eq, and, sql, inArray, asc, desc } from "drizzle-orm";
 
 export type ProductListFilters = {
@@ -151,6 +151,16 @@ export async function getAllProductsForSelect() {
   return allProds.map(p => ({
     id: p.id,
     name: p.name as Record<string, string>,
+  }));
+}
+
+// Összes termékcsalád a legördülő admin listához
+export async function getAllProductGroups() {
+  const groups = await db.select().from(productGroups).orderBy(productGroups.createdAt);
+  return groups.map(g => ({
+    id: g.id,
+    name: g.name as Record<string, string>,
+    slug: g.slug as Record<string, string>,
   }));
 }
 

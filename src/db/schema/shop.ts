@@ -7,6 +7,15 @@ export const productStatusEnum = pgEnum("product_status", ["ACTIVE", "INACTIVE"]
 export const mediaTypeEnum = pgEnum("media_type", ["IMAGE", "YOUTUBE", "AUDIO"]);
 export const orderStatusEnum = pgEnum("order_status", ["pending", "paid", "shipped", "completed", "cancelled"]);
 
+// Nevesített termékcsaládok táblája (pl. "Meinl Sonic Energy sorozat")
+export const productGroups = pgTable("product_groups", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: jsonb("name").notNull(), // { hu: string, en: string, sk: string }
+  slug: jsonb("slug").notNull(), // { hu: string, en: string, sk: string }
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const products = pgTable("products", {
   id: uuid("id").defaultRandom().primaryKey(),
   // SEO-barát, egyedi URL azonosító (pl. "nagy-kezmuves-hangtal")
@@ -21,11 +30,12 @@ export const products = pgTable("products", {
   status: productStatusEnum("status").default("ACTIVE").notNull(),
   priority: integer("priority").default(0).notNull(),
   layoutTemplate: varchar("layout_template", { length: 100 }).default("STANDARD").notNull(),
-  groupId: uuid("group_id"), // Termékcsalád összekapcsolásához
+  // FK → product_groups: SET NULL ha a csoport törlődik
+  groupId: uuid("group_id").references(() => productGroups.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({
-  groupIdIdx: index("products_group_id_idx").on(table.groupId)
+  groupIdIdx: index("products_group_id_idx").on(table.groupId),
 }));
 
 export const productVariants = pgTable("product_variants", {

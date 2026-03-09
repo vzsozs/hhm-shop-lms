@@ -50,6 +50,13 @@
       "when": 1773028800750,
       "tag": "0006_add_media_order_index",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1773030554827,
+      "tag": "0007_add_product_groups_table",
+      "breakpoints": true
     }
   ]
 }

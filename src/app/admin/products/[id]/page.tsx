@@ -3,6 +3,7 @@ import type { ProductFormValues } from "@/modules/shop/hooks/use-product-form";
 import { db } from "@/db";
 import { products, productVariants, productMedia, productCategories, productAttachments } from "@/db/schema/shop";
 import { categories } from "@/db/schema/shop";
+import { getAllProductGroups } from "@/modules/shop/queries";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 
@@ -24,23 +25,18 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
   const categoryData = await db.select({ id: productCategories.categoryId }).from(productCategories).where(eq(productCategories.productId, id));
   const attachmentData = await db.select().from(productAttachments).where(eq(productAttachments.productId, id));
   
-  // Összes elérhető kategória és termék (a termékcsalád választóhoz)
-  const [allCategories, allProducts] = await Promise.all([
+  // Összes elérhető kategória, termék és termékcsalád
+  const [allCategories, allProducts, allProductGroups] = await Promise.all([
     db.select().from(categories),
-    db.select({ id: products.id, name: products.name, groupId: products.groupId })
+    db.select({ id: products.id, name: products.name })
       .from(products)
       .where(eq(products.status, "ACTIVE")),
+    getAllProductGroups(),
   ]);
 
   // A csoport-mód meghatározása a meglévő groupId alapján
   const groupMode = productData.groupId ? "join_group" : "standalone";
-
-  // A csoport tagjai (kivéve magát a terméket)
-  const familyProductIds = productData.groupId
-    ? allProducts
-        .filter(p => p.groupId === productData.groupId && p.id !== id)
-        .map(p => p.id)
-    : [];
+  const selectedGroupId = productData.groupId || undefined;
 
   // 3. Adatok átalakítása a ProductForm számara elvárt formátumra (ProductFormValues)
   const initialData: Partial<ProductFormValues> = {
@@ -64,7 +60,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
     specifications: productData.specifications || [],
     categoryIds: categoryData.map(c => c.id),
     groupMode: groupMode as "standalone" | "new_group" | "join_group",
-    familyProductIds,
+    selectedGroupId,
     variants: variantData.map(v => ({
       id: v.id,
       name_hu: (v.name as Record<string, string>)?.hu || "",
@@ -94,7 +90,8 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
       <ProductForm
         initialData={initialData}
         categories={allCategories as unknown as { id: string; name: Record<string, string> }[]}
-        products={allProducts as unknown as { id: string; name: Record<string, string>; groupId?: string | null }[]}
+        products={allProducts as unknown as { id: string; name: Record<string, string> }[]}
+        productGroups={allProductGroups}
         productId={id}
       />
     </div>

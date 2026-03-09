@@ -1,11 +1,58 @@
 "use server";
 
 import { db } from "@/db";
-import { products, productVariants, productMedia, productCategories, productRecommendations, productAttachments } from "@/db/schema/shop";
+import { products, productVariants, productMedia, productCategories, productRecommendations, productAttachments, productGroups } from "@/db/schema/shop";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createProductServerSchema, CreateProductPayload } from "./schemas";
 import { eq, sql } from "drizzle-orm";
+
+// Csoport-slug generálás
+function generateGroupSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+}
+
+// Named Group létrehozása a product_groups táblában (tranzakción belül)
+async function createProductGroupHelper(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  name: Record<string, string>
+): Promise<string> {
+  const slug = {
+    hu: generateGroupSlug(name.hu || ""),
+    en: name.en ? generateGroupSlug(name.en) : "",
+    sk: name.sk ? generateGroupSlug(name.sk) : "",
+  };
+  const [group] = await tx
+    .insert(productGroups)
+    .values({ name, slug })
+    .returning({ id: productGroups.id });
+  return group.id;
+}
+
+// Árva csoport törlése: ha nincs már tagja, töröljük a product_groups sort
+async function cleanupOrphanGroup(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  groupId: string,
+  excludeProductId?: string
+): Promise<void> {
+  const whereClause = excludeProductId
+    ? sql`group_id = ${groupId} AND id != ${excludeProductId}`
+    : sql`group_id = ${groupId}`;
+
+  const [{ value: remaining }] = await tx.execute(
+    sql`SELECT COUNT(*)::int as value FROM products WHERE ${whereClause}`
+  );
+  if ((remaining as number) === 0) {
+    await tx.delete(productGroups).where(eq(productGroups.id, groupId));
+  }
+}
 
 // SEO-barát slug generáló a termék nevéből
 function generateSlug(text: string): string {
@@ -49,19 +96,21 @@ export async function createProduct(formData: CreateProductPayload) {
     };
 
     const result = await db.transaction(async (tx) => {
-      // 1. Group ID kezelése (3 mód: standalone, new_group, join_group)
+      // 1. Named Group ID kezelése
       let groupId: string | null = null;
-      if (validated.forceNewGroup) {
-        // Mód: "Új csoport indítása" – mindig új UUID
-        groupId = crypto.randomUUID();
-      } else if (validated.familyProductIds && validated.familyProductIds.length > 0) {
-        // Mód: "Csatlakozás meglévő családhoz" – megkeressük a csoport UUID-ját
-        const familyProducts = await tx.execute(
-          sql`SELECT group_id FROM products WHERE id IN (${sql.join(validated.familyProductIds.map(id => sql`${id}`), sql`, `)}) AND group_id IS NOT NULL LIMIT 1`
-        );
-        groupId = (familyProducts[0] as { group_id: string | null } | undefined)?.group_id || crypto.randomUUID();
+
+      if (validated.newGroupName?.hu) {
+        // Mód: "Új named group" – létrehozzuk a product_groups sort
+        groupId = await createProductGroupHelper(tx, {
+          hu: validated.newGroupName.hu,
+          en: validated.newGroupName.en || "",
+          sk: validated.newGroupName.sk || "",
+        });
+      } else if (validated.selectedGroupId) {
+        // Mód: "Csatlakozás meglévő családhoz" – a kiválasztott csoport ID-ját használjuk
+        groupId = validated.selectedGroupId;
       }
-      // Mód: "Önálló termék" – groupId = null (elértuk ide)
+      // Mód: "Önálló" – groupId = null
 
       // 2. Termék létrehozása
       const [newProduct] = await tx
@@ -81,14 +130,7 @@ export async function createProduct(formData: CreateProductPayload) {
         })
         .returning();
 
-      // 3. Ha van csoport, frissítjük a többi tagot is
-      if (groupId && validated.familyProductIds && validated.familyProductIds.length > 0) {
-        await tx.execute(
-          sql`UPDATE products SET group_id = ${groupId} WHERE id IN (${sql.join(validated.familyProductIds.map(id => sql`${id}`), sql`, `)})`
-        );
-      }
-
-      // 4. Variáns létrehozása (mostantól csak egy per termék az adminon, de a DB-ben maradhat lista)
+      // 2. Termék létrehozása
       if (validated.variants && validated.variants.length > 0) {
         const v = validated.variants[0]; // Csak az elsőt vesszük (Admin UI korlátozás)
         await tx.insert(productVariants).values({
@@ -167,29 +209,27 @@ export async function updateProduct(id: string, formData: CreateProductPayload) 
     const validated = createProductServerSchema.parse(formData);
 
     const result = await db.transaction(async (tx) => {
-      // 1. Group ID szinkronizálása
-      let groupId = null;
-      // Meglévő groupId lekérése
+      // 1. Named Group kezelése (3 mód)
       const [currentProduct] = await tx.select({ groupId: products.groupId }).from(products).where(eq(products.id, id));
-      groupId = currentProduct?.groupId;
+      const previousGroupId = currentProduct?.groupId ?? null;
+      let groupId: string | null = null;
 
-      if (validated.familyProductIds && validated.familyProductIds.length > 0) {
-        if (!groupId) {
-          // Ha eddig nem volt csoportja, keresünk egyet a tagok között vagy újat generálunk
-          const familyWithGroup = await tx.execute(
-            sql`SELECT group_id FROM products WHERE id IN (${sql.join(validated.familyProductIds.map(fid => sql`${fid}`), sql`, `)}) AND group_id IS NOT NULL LIMIT 1`
-          );
-          groupId = (familyWithGroup[0] as { group_id: string | null } | undefined)?.group_id || crypto.randomUUID();
-        }
-        
-        // Összes tag frissítése (régi tagok is maradhatnak benne, de az admin csak az újakat küldi)
-        await tx.execute(
-          sql`UPDATE products SET group_id = ${groupId} WHERE id IN (${sql.join([...validated.familyProductIds, id].map(fid => sql`${fid}`), sql`, `)})`
-        );
-      } else if (groupId) {
-         // Ha kiürítették a csoportot, ezt a terméket kivesszük (groupId = null)
-         // Kérdés: A többiek maradjanak csoportban? Általában igen.
-         groupId = null;
+      if (validated.newGroupName?.hu) {
+        // Mód: "Új named group" - létrehozzuk a product_groups sort
+        groupId = await createProductGroupHelper(tx, {
+          hu: validated.newGroupName.hu,
+          en: validated.newGroupName.en || "",
+          sk: validated.newGroupName.sk || "",
+        });
+      } else if (validated.selectedGroupId) {
+        // Mód: "Csatlakozás meglévő családhoz"
+        groupId = validated.selectedGroupId;
+      }
+      // Mód: "Önálló" - groupId = null
+
+      // Ha a termék kilépett egy családból (previousGroupId volt, de úsj nincs): árva-ellenőrzés
+      if (previousGroupId && previousGroupId !== groupId) {
+        await cleanupOrphanGroup(tx, previousGroupId, id);
       }
 
       // 2. Termék frissítése

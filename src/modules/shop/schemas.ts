@@ -88,8 +88,34 @@ export const productFormSchema = z.object({
   categoryIds: z.array(z.string().uuid()).optional().default([]),
   // 3-utas termékcsalád mód
   groupMode: z.enum(["standalone", "new_group", "join_group"]).default("standalone"),
-  familyProductIds: z.array(z.string().uuid()).optional().default([]),
+  // join_group módban: a kiválasztott csoport UUID-ja
+  selectedGroupId: z.string().uuid().optional(),
+  // new_group módban: az új csoport neve (többnyelvű) – feltételes validáció
+  newGroupName: z.object({
+    hu: z.string().optional().default(""),
+    en: z.string().optional().default(""),
+    sk: z.string().optional().default(""),
+  }).optional(),
 }).superRefine((data, ctx) => {
+  // Feltételes validáció: new_group módban a csoport neve kötelező
+  if (data.groupMode === "new_group") {
+    const hu = data.newGroupName?.hu || "";
+    if (hu.length < 2) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Az új termékcsalád neve kötelező (min. 2 karakter)!",
+        path: ["newGroupName", "hu"],
+      });
+    }
+  }
+  // join_group módban a csoport UUID kötelező
+  if (data.groupMode === "join_group" && !data.selectedGroupId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Válassz ki egy meglévő termékcsaládot!",
+      path: ["selectedGroupId"],
+    });
+  }
   // Feltételes validáció fizikai termékeknél a variánsokon
   if (data.type === "physical") {
     data.variants.forEach((variant, index) => {
@@ -162,10 +188,14 @@ export const createProductServerSchema = z.object({
   })).optional().default([]),
   // Kategória azonosítók listája (opcionális)
   categoryIds: z.array(z.string().uuid()).optional().default([]),
-  // Termékcsalád tagok azonosítói (opcionális)
-  familyProductIds: z.array(z.string().uuid()).optional().default([]),
-  // Ha true, az action mindig új groupId-ot generál, nem keres meglévőt
-  forceNewGroup: z.boolean().optional().default(false),
+  // Named Group kezelés: join_group módban meglévő csoport ID-ja
+  selectedGroupId: z.string().uuid().optional(),
+  // Named Group kezelés: new_group módban új csoport neve
+  newGroupName: z.object({
+    hu: z.string().optional().default(""),
+    en: z.string().optional().default(""),
+    sk: z.string().optional().default(""),
+  }).optional(),
   
   slug: z.object({
     hu: z.string().optional().default(""),

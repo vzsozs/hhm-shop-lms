@@ -52,7 +52,8 @@ export function useProductForm(initialData?: Partial<ProductFormValues>, product
       layoutTemplate: "STANDARD",
       categoryIds: [],
       groupMode: "standalone" as const,
-      familyProductIds: [],
+      selectedGroupId: undefined,
+      newGroupName: { hu: "", en: "", sk: "" },
     },
   });
 
@@ -112,8 +113,8 @@ export function useProductForm(initialData?: Partial<ProductFormValues>, product
       priority: values.priority,
       layoutTemplate: values.layoutTemplate,
       categoryIds: values.categoryIds || [],
-      familyProductIds: values.groupMode === "join_group" ? (values.familyProductIds || []) : [],
-      forceNewGroup: values.groupMode === "new_group",
+      selectedGroupId: values.groupMode === "join_group" ? values.selectedGroupId : undefined,
+      newGroupName: values.groupMode === "new_group" ? values.newGroupName : undefined,
     };
 
     const result = productId 

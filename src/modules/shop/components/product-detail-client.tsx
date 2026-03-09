@@ -102,19 +102,23 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
             <div className="min-h-[200px] font-montserrat text-brand-black/80 bg-white/40 p-6 rounded-2xl border border-brand-bronze/10 shadow-sm">
               {activeTab === "specs" && (
                 <div>
-                   {product.specifications ? (
+                   {Array.isArray(product.specifications) && product.specifications.length > 0 ? (
                      <ul className="space-y-4">
-                       {Object.entries(product.specifications).map(([key, val]) => (
-                         <li key={key} className="flex gap-3 items-center">
-                           <div className="w-6 h-6 rounded-full bg-brand-bronze/20 flex items-center justify-center shrink-0">
-                             <Check className="w-3.5 h-3.5 text-brand-brown" />
-                           </div>
-                           <span><strong className="capitalize">{key}:</strong> {String(val)}</span>
-                         </li>
-                       ))}
+                       {(product.specifications as Array<Record<string, string>>).map((spec, i) => {
+                         const key = spec.key_hu || spec.key_en || `Jellemző ${i + 1}`;
+                         const val = spec.value_hu || spec.value_en || "–";
+                         return (
+                           <li key={i} className="flex gap-3 items-center">
+                             <div className="w-6 h-6 rounded-full bg-brand-bronze/20 flex items-center justify-center shrink-0">
+                               <Check className="w-3.5 h-3.5 text-brand-brown" />
+                             </div>
+                             <span><strong className="capitalize">{key}:</strong> {val}</span>
+                           </li>
+                         );
+                       })}
                      </ul>
                    ) : (
-                     <p>Nincsenek specifikációk rögzítve.</p>
+                     <p className="italic text-brand-black/50">Nincsenek specifikációk rögzítve.</p>
                    )}
                 </div>
               )}
@@ -204,15 +208,19 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
                </div>
 
                {/* Specifikációk kistábla formátumban */}
-               {product.specifications && Object.keys(product.specifications).length > 0 && (
+               {Array.isArray(product.specifications) && product.specifications.length > 0 && (
                  <div className="flex flex-col gap-0.5 mt-2 text-xs text-brand-black">
-                   {Object.entries(product.specifications).slice(0, 3).map(([key, val]) => (
-                     <div key={key} className="flex gap-2 items-center">
-                       <Award className="w-3.5 h-3.5 text-brand-black/60 shrink-0" />
-                       <span className="capitalize text-brand-black/60">{key}:</span> 
-                       <span className="font-bold">{String(val)}</span>
-                     </div>
-                   ))}
+                   {(product.specifications as Array<Record<string, string>>).slice(0, 3).map((spec, i) => {
+                     const key = spec.key_hu || spec.key_en || `Jellemző ${i + 1}`;
+                     const val = spec.value_hu || spec.value_en || "–";
+                     return (
+                       <div key={i} className="flex gap-2 items-center">
+                         <Award className="w-3.5 h-3.5 text-brand-black/60 shrink-0" />
+                         <span className="capitalize text-brand-black/60">{key}:</span>
+                         <span className="font-bold">{val}</span>
+                       </div>
+                     );
+                   })}
                  </div>
                )}
             </div>

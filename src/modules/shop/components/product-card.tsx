@@ -28,8 +28,12 @@ export function ProductCard({ product, lang }: { product: ProductListItem; lang:
             />
           </Link>
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-brand-black/40 font-montserrat text-sm">
-            Nincs kép
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-[#f3ede8] via-[#ede3d8] to-[#d9c9b4] gap-3">
+            <img
+              src="/assets/PalAdri-logo-2023-Vegleges-Lezer-light.svg"
+              alt="Hangakadémia"
+              className="w-24 h-auto opacity-40"
+            />
           </div>
         )}
         

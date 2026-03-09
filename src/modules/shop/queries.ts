@@ -58,7 +58,13 @@ export async function getActiveProducts(filters?: ProductListFilters): Promise<P
       type: products.type,
       minPriceHuf: sql<number>`min(${productVariants.priceHuf})`.mapWith(Number),
       minPriceEur: sql<number>`min(${productVariants.priceEur})`.mapWith(Number),
-      mainImageUrl: sql<string>`min(${productMedia.url})` 
+      mainImageUrl: sql<string>`(
+        SELECT ${productMedia.url}
+        FROM ${productMedia}
+        WHERE ${productMedia.productId} = ${products.id}
+        ORDER BY ${productMedia.order} ASC
+        LIMIT 1
+      )`
     })
     .from(products)
     .leftJoin(productVariants, eq(products.id, productVariants.productId))

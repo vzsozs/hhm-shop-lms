@@ -31,8 +31,15 @@ import { CategoryForm } from "./category-form";
 import { deleteCategory } from "@/modules/shop/actions";
 import { toast } from "sonner";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type CategoryNode = any; // TODO: type export
+interface CategoryNode {
+  id: string;
+  name: Record<string, string>;
+  description?: Record<string, string> | null;
+  slug: Record<string, string>;
+  parentId?: string | null;
+  depth: number;
+  parentNameHu?: string;
+}
 
 interface CategoryClientProps {
   categories: CategoryNode[];

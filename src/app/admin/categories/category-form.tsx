@@ -55,7 +55,7 @@ export function CategoryForm({ initialData, categories, onSuccess, onCancel }: C
     description_hu: initialData?.description?.hu || "",
     description_en: initialData?.description?.en || "",
     description_sk: initialData?.description?.sk || "",
-    slug: (initialData?.slug as any)?.hu || "",
+    slug: (initialData?.slug as Record<string, string>)?.hu || "",
     parentId: initialData?.parentId || "none",
   };
 

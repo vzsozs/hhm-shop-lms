@@ -20,20 +20,21 @@ function generateSlug(text: string): string {
 }
 
 // Ha a slug már létezik, egyedi suffix hozzáadása (-2, -3, stb.)
+// Optimized: egyetlen DB-hívással kéri le az összes érintő slugot
 async function ensureUniqueSlug(baseSlug: string, lang: string, excludeId?: string): Promise<string> {
-  let slug = baseSlug;
+  const existing = await db.execute(
+    sql`SELECT slug->>${lang} as slug_val FROM products WHERE slug->>${lang} LIKE ${baseSlug + '%'} ${excludeId ? sql`AND id != ${excludeId}` : sql``}`
+  );
+
+  const takenSlugs = new Set(existing.map((r) => (r as { slug_val: string }).slug_val));
+
+  if (!takenSlugs.has(baseSlug)) return baseSlug;
+
   let counter = 2;
-  while (true) {
-    // JSONB keresés Drizzle-ben
-    const existing = await db.execute(
-      sql`SELECT id FROM products WHERE slug->>${lang} = ${slug} ${excludeId ? sql`AND id != ${excludeId}` : sql``} LIMIT 1`
-    );
-    
-    if (existing.length === 0) break;
-    slug = `${baseSlug}-${counter}`;
+  while (takenSlugs.has(`${baseSlug}-${counter}`)) {
     counter++;
   }
-  return slug;
+  return `${baseSlug}-${counter}`;
 }
 
 export async function createProduct(formData: CreateProductPayload) {
@@ -48,16 +49,19 @@ export async function createProduct(formData: CreateProductPayload) {
     };
 
     const result = await db.transaction(async (tx) => {
-      // 1. Group ID kezelése
-      let groupId = null;
-      if (validated.familyProductIds && validated.familyProductIds.length > 0) {
-        // Megnézzük, van-e már groupId a kiválasztott termékek között
+      // 1. Group ID kezelése (3 mód: standalone, new_group, join_group)
+      let groupId: string | null = null;
+      if (validated.forceNewGroup) {
+        // Mód: "Új csoport indítása" – mindig új UUID
+        groupId = crypto.randomUUID();
+      } else if (validated.familyProductIds && validated.familyProductIds.length > 0) {
+        // Mód: "Csatlakozás meglévő családhoz" – megkeressük a csoport UUID-ját
         const familyProducts = await tx.execute(
           sql`SELECT group_id FROM products WHERE id IN (${sql.join(validated.familyProductIds.map(id => sql`${id}`), sql`, `)}) AND group_id IS NOT NULL LIMIT 1`
         );
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        groupId = (familyProducts[0] as any)?.group_id || crypto.randomUUID();
+        groupId = (familyProducts[0] as { group_id: string | null } | undefined)?.group_id || crypto.randomUUID();
       }
+      // Mód: "Önálló termék" – groupId = null (elértuk ide)
 
       // 2. Termék létrehozása
       const [newProduct] = await tx
@@ -68,7 +72,7 @@ export async function createProduct(formData: CreateProductPayload) {
           description: validated.description as Record<string, string>,
           shortDescription: validated.shortDescription as Record<string, string>,
           longDescription: validated.longDescription as Record<string, string>,
-          specifications: (validated.specifications || []) as any,
+          specifications: (validated.specifications || []) as Record<string, string>[],
           type: validated.type,
           status: validated.status,
           priority: validated.priority,
@@ -175,8 +179,7 @@ export async function updateProduct(id: string, formData: CreateProductPayload) 
           const familyWithGroup = await tx.execute(
             sql`SELECT group_id FROM products WHERE id IN (${sql.join(validated.familyProductIds.map(fid => sql`${fid}`), sql`, `)}) AND group_id IS NOT NULL LIMIT 1`
           );
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          groupId = (familyWithGroup[0] as any)?.group_id || crypto.randomUUID();
+          groupId = (familyWithGroup[0] as { group_id: string | null } | undefined)?.group_id || crypto.randomUUID();
         }
         
         // Összes tag frissítése (régi tagok is maradhatnak benne, de az admin csak az újakat küldi)
@@ -197,7 +200,7 @@ export async function updateProduct(id: string, formData: CreateProductPayload) 
           description: validated.description as Record<string, string>,
           shortDescription: validated.shortDescription as Record<string, string>,
           longDescription: validated.longDescription as Record<string, string>,
-          specifications: (validated.specifications || []) as any,
+          specifications: (validated.specifications || []) as Record<string, string>[],
           type: validated.type,
           status: validated.status,
           priority: validated.priority,
@@ -348,10 +351,11 @@ export async function duplicateProduct(id: string) {
     const attachments = await db.select().from(productAttachments).where(eq(productAttachments.productId, id));
 
     // Új alap adatok és módosított slug
+    const originalName = originalProduct.name as Record<string, string>;
     const newName = { 
-      hu: `${(originalProduct.name as any).hu} (Másolat)`,
-      en: (originalProduct.name as any).en ? `${(originalProduct.name as any).en} (Copy)` : "",
-      sk: (originalProduct.name as any).sk ? `${(originalProduct.name as any).sk} (Kópia)` : "",
+      hu: `${originalName.hu} (Másolat)`,
+      en: originalName.en ? `${originalName.en} (Copy)` : "",
+      sk: originalName.sk ? `${originalName.sk} (Kópia)` : "",
     };
 
     const slug = {
@@ -368,7 +372,7 @@ export async function duplicateProduct(id: string) {
         description: originalProduct.description as Record<string, string>,
         shortDescription: originalProduct.shortDescription as Record<string, string>,
         longDescription: originalProduct.longDescription as Record<string, string>,
-        specifications: originalProduct.specifications as any,
+        specifications: originalProduct.specifications as Record<string, string>[] | null,
         type: originalProduct.type,
         status: "INACTIVE", // Másolatok mindig piszkozatként jöjjenek létre
         priority: originalProduct.priority,

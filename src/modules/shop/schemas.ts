@@ -86,6 +86,8 @@ export const productFormSchema = z.object({
   priority: rhfNumberField.optional().default(0),
   layoutTemplate: z.enum(["STANDARD", "VIDEO_CENTERED", "DOCUMENTARY"]).default("STANDARD"),
   categoryIds: z.array(z.string().uuid()).optional().default([]),
+  // 3-utas termékcsalád mód
+  groupMode: z.enum(["standalone", "new_group", "join_group"]).default("standalone"),
   familyProductIds: z.array(z.string().uuid()).optional().default([]),
 }).superRefine((data, ctx) => {
   // Feltételes validáció fizikai termékeknél a variánsokon
@@ -162,6 +164,8 @@ export const createProductServerSchema = z.object({
   categoryIds: z.array(z.string().uuid()).optional().default([]),
   // Termékcsalád tagok azonosítói (opcionális)
   familyProductIds: z.array(z.string().uuid()).optional().default([]),
+  // Ha true, az action mindig új groupId-ot generál, nem keres meglévőt
+  forceNewGroup: z.boolean().optional().default(false),
   
   slug: z.object({
     hu: z.string().optional().default(""),

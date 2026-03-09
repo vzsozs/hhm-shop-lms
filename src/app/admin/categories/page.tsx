@@ -64,13 +64,20 @@ export default async function AdminCategoriesPage() {
   // Csak az egyszerű listát adjuk át a formnak a selecthoz (szülő választó)
   const flatCategoriesForSelect = allCategories.map(c => ({
     id: c.id,
-    name: (c.name as Record<string, string>)?.hu || (c.slug as any)?.hu || "Névtelen",
+    name: (c.name as Record<string, string>)?.hu || (c.slug as Record<string, string>)?.hu || "Névtelen",
+  }));
+
+  const typedHierarchicalList = hierarchicalList.map(c => ({
+    ...c,
+    name: c.name as Record<string, string>,
+    description: c.description as Record<string, string> | null,
+    slug: c.slug as Record<string, string>,
   }));
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-8 pb-12">
       <CategoryClient 
-        categories={hierarchicalList} 
+        categories={typedHierarchicalList} 
         flatCategories={flatCategoriesForSelect} 
       />
     </div>

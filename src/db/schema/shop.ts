@@ -62,7 +62,10 @@ export const productMedia = pgTable("product_media", {
   order: integer("order").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  // Compound index az ORDER BY product_id, order lekérdezések gyorsításához
+  productIdOrderIdx: index("product_media_product_id_order_idx").on(table.productId, table.order),
+}));
 
 export const orders = pgTable("orders", {
   id: uuid("id").defaultRandom().primaryKey(),

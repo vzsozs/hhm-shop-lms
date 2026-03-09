@@ -24,8 +24,23 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
   const categoryData = await db.select({ id: productCategories.categoryId }).from(productCategories).where(eq(productCategories.productId, id));
   const attachmentData = await db.select().from(productAttachments).where(eq(productAttachments.productId, id));
   
-  // Összes elérhető kategória
-  const allCategories = await db.select().from(categories);
+  // Összes elérhető kategória és termék (a termékcsalád választóhoz)
+  const [allCategories, allProducts] = await Promise.all([
+    db.select().from(categories),
+    db.select({ id: products.id, name: products.name, groupId: products.groupId })
+      .from(products)
+      .where(eq(products.status, "ACTIVE")),
+  ]);
+
+  // A csoport-mód meghatározása a meglévő groupId alapján
+  const groupMode = productData.groupId ? "join_group" : "standalone";
+
+  // A csoport tagjai (kivéve magát a terméket)
+  const familyProductIds = productData.groupId
+    ? allProducts
+        .filter(p => p.groupId === productData.groupId && p.id !== id)
+        .map(p => p.id)
+    : [];
 
   // 3. Adatok átalakítása a ProductForm számara elvárt formátumra (ProductFormValues)
   const initialData: Partial<ProductFormValues> = {
@@ -48,6 +63,8 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
     // @ts-expect-error Drizzle spec type fallback
     specifications: productData.specifications || [],
     categoryIds: categoryData.map(c => c.id),
+    groupMode: groupMode as "standalone" | "new_group" | "join_group",
+    familyProductIds,
     variants: variantData.map(v => ({
       id: v.id,
       name_hu: (v.name as Record<string, string>)?.hu || "",
@@ -74,10 +91,11 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
 
   return (
     <div className="w-full max-w-7xl mx-auto pb-12">
-      <ProductForm 
-         initialData={initialData} 
-         categories={allCategories as unknown as { id: string, name: Record<string, string> }[]} 
-         productId={id}
+      <ProductForm
+        initialData={initialData}
+        categories={allCategories as unknown as { id: string; name: Record<string, string> }[]}
+        products={allProducts as unknown as { id: string; name: Record<string, string>; groupId?: string | null }[]}
+        productId={id}
       />
     </div>
   );

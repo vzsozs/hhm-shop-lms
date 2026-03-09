@@ -27,17 +27,9 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { 
-  Loader2, 
-  Plus, 
-  Trash2, 
-  Search, 
-  ChevronUp, 
-  ChevronDown,
-  Image as ImageIcon,
-  Music,
-  FileText
-} from "lucide-react";
+import { Loader2, Plus, Trash2, Search, ChevronUp, ChevronDown, Image as ImageIcon, Music, FileText, Users, UserPlus, Package } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { productFormStyles as styles } from "./product-form.styles";
 
 interface PendingUpload {
@@ -46,7 +38,12 @@ interface PendingUpload {
   type: "IMAGE" | "AUDIO" | "DOCUMENT";
 }
 
-export function ProductForm({ categories = [], products = [], initialData, productId }: { categories?: { id: string, name: Record<string, string> }[], products?: { id: string, name: Record<string, string> }[], initialData?: Partial<ProductFormValues>, productId?: string }) {
+export function ProductForm({ categories = [], products = [], initialData, productId }: {
+  categories?: { id: string; name: Record<string, string> }[];
+  products?: { id: string; name: Record<string, string>; groupId?: string | null }[];
+  initialData?: Partial<ProductFormValues>;
+  productId?: string;
+}) {
   const { form, isPending, onSubmit, productType, moveMedia, removeMedia } = useProductForm(initialData, productId);
   const isEditMode = !!initialData;
   
@@ -571,66 +568,130 @@ export function ProductForm({ categories = [], products = [], initialData, produ
               </div>
             </div>
 
-            {/* Termékcsalád (Product Family) */}
-            {products.length > 0 && (
-              <FormField
-                control={form.control}
-                name="familyProductIds"
-                render={() => (
-                  <FormItem>
-                    <div className={styles.sectionHeader}>
-                      <FormLabel className={styles.sectionTitle}>Termékcsalád tagjai</FormLabel>
-                      <div className="relative max-w-xs w-[250px]">
-                        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
-                        <Input 
-                          placeholder="Termék keresése..." 
-                          className={`pr-10 ${styles.inputWrapper} ${styles.input}`} 
-                          value={familySearch}
-                          onChange={(e) => setFamilySearch(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 bg-admin-bg p-4 rounded-xl max-h-[300px] overflow-y-auto">
-                      {products
-                        .filter(p => p.id !== productId && (p.name?.hu?.toLowerCase().includes(familySearch.toLowerCase()) || p.name?.en?.toLowerCase().includes(familySearch.toLowerCase())))
-                        .map((product) => (
-                        <FormField
-                          key={product.id}
-                          control={form.control}
-                          name="familyProductIds"
-                          render={({ field }) => {
-                            return (
-                              <FormItem key={product.id}>
-                                <FormLabel className={`${styles.checkboxItem} w-full m-0`}>
-                                  <FormControl>
-                                    <Checkbox
-                                      checked={field.value?.includes(product.id)}
-                                      onCheckedChange={(checked) => {
-                                        return checked
-                                          ? field.onChange([...(field.value || []), product.id])
-                                          : field.onChange((field.value?.filter((value: string) => value !== product.id)) || [])
-                                      }}
-                                      className={styles.checkbox}
+            {/* Termékcsalád (Product Family) – 3-utas választó */}
+            <div>
+              <div className={styles.sectionHeader}>
+                <h3 className={styles.sectionTitle}>Termékcsalád</h3>
+              </div>
+              <div className={`${styles.sectionContent} space-y-4`}>
+                <FormField
+                  control={form.control}
+                  name="groupMode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <RadioGroup
+                        value={field.value}
+                        onValueChange={(val) => {
+                          field.onChange(val);
+                          // Ha nem join_group, ürítük a kiválasztást
+                          if (val !== "join_group") {
+                            form.setValue("familyProductIds", []);
+                          }
+                        }}
+                        className="flex flex-col gap-3"
+                      >
+                        {/* Option A: Önálló */}
+                        <div className="flex items-start gap-3 p-3 rounded-xl border border-white/10 bg-white/5 cursor-pointer hover:bg-white/8 transition-colors">
+                          <RadioGroupItem value="standalone" id="grp-standalone" className="mt-0.5 border-white/30 text-brand-orange" />
+                          <div>
+                            <Label htmlFor="grp-standalone" className="font-semibold text-white cursor-pointer flex items-center gap-2">
+                              <Package className="h-4 w-4 text-white/60" />
+                              Önálló termék
+                            </Label>
+                            <p className="text-xs text-white/40 mt-0.5">Nem tartozik semmilyen csoporthoz.</p>
+                          </div>
+                        </div>
+
+                        {/* Option B: Új csoport */}
+                        <div className="flex items-start gap-3 p-3 rounded-xl border border-white/10 bg-white/5 cursor-pointer hover:bg-white/8 transition-colors">
+                          <RadioGroupItem value="new_group" id="grp-new" className="mt-0.5 border-white/30 text-brand-orange" />
+                          <div>
+                            <Label htmlFor="grp-new" className="font-semibold text-white cursor-pointer flex items-center gap-2">
+                              <UserPlus className="h-4 w-4 text-white/60" />
+                              Új termékcsalád
+                            </Label>
+                            <p className="text-xs text-white/40 mt-0.5">Ez a termék indít egy új csoportot. Később más termékek csatlakozhatnak.</p>
+                          </div>
+                        </div>
+
+                        {/* Option C: Csatlakozás */}
+                        <div className="flex flex-col gap-3 p-3 rounded-xl border border-white/10 bg-white/5 cursor-pointer hover:bg-white/8 transition-colors">
+                          <div className="flex items-start gap-3">
+                            <RadioGroupItem value="join_group" id="grp-join" className="mt-0.5 border-white/30 text-brand-orange" />
+                            <div>
+                              <Label htmlFor="grp-join" className="font-semibold text-white cursor-pointer flex items-center gap-2">
+                                <Users className="h-4 w-4 text-white/60" />
+                                Meglévő családhoz csatlakozás
+                              </Label>
+                              <p className="text-xs text-white/40 mt-0.5">Válassz ki meglévő termék(ek)et, amelyekkel egy csoport lesz.</p>
+                            </div>
+                          </div>
+
+                          {/* Feltételes lista – csak join_group módban */}
+                          {field.value === "join_group" && products.length > 0 && (
+                            <div className="ml-7 space-y-3">
+                              <div className="relative">
+                                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
+                                <Input
+                                  placeholder="Termék keresése..."
+                                  className={`pr-10 ${styles.inputWrapper} ${styles.input}`}
+                                  value={familySearch}
+                                  onChange={(e) => setFamilySearch(e.target.value)}
+                                />
+                              </div>
+                              <div className="grid grid-cols-1 gap-2 max-h-[220px] overflow-y-auto pr-1">
+                                {products
+                                  .filter(p =>
+                                    p.id !== productId &&
+                                    (
+                                      p.name?.hu?.toLowerCase().includes(familySearch.toLowerCase()) ||
+                                      p.name?.en?.toLowerCase().includes(familySearch.toLowerCase())
+                                    )
+                                  )
+                                  .map((product) => (
+                                    <FormField
+                                      key={product.id}
+                                      control={form.control}
+                                      name="familyProductIds"
+                                      render={({ field: fField }) => (
+                                        <FormItem key={product.id}>
+                                          <FormLabel className={`${styles.checkboxItem} w-full m-0`}>
+                                            <FormControl>
+                                              <Checkbox
+                                                checked={fField.value?.includes(product.id)}
+                                                onCheckedChange={(checked) => {
+                                                  return checked
+                                                    ? fField.onChange([...(fField.value || []), product.id])
+                                                    : fField.onChange((fField.value?.filter((v: string) => v !== product.id)) || []);
+                                                }}
+                                                className={styles.checkbox}
+                                              />
+                                            </FormControl>
+                                            <div className="flex flex-col min-w-0">
+                                              <span className="font-medium text-white/80 line-clamp-1">{product.name?.hu || "Termék"}</span>
+                                              {product.groupId && (
+                                                <span className="text-[10px] text-brand-orange/70">Már csoport tagja</span>
+                                              )}
+                                            </div>
+                                          </FormLabel>
+                                        </FormItem>
+                                      )}
                                     />
-                                  </FormControl>
-                                  <span className="font-normal cursor-pointer line-clamp-2 text-white/80">
-                                    {product.name?.hu || "Termék"}
-                                  </span>
-                                </FormLabel>
-                              </FormItem>
-                            )
-                          }}
-                        />
-                      ))}
-                    </div>
-                    <p className="text-xs text-white/40 mt-2 italic px-2">
-                       A kiválasztott termékek egy közös csoportba (variációba) kerülnek.
-                    </p>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+                                  ))}
+                                {products.filter(p => p.id !== productId).length === 0 && (
+                                  <p className="text-sm text-white/40 italic">Nincs más termék az adatbázisban.</p>
+                                )}
+                              </div>
+                              <FormMessage />
+                            </div>
+                          )}
+                        </div>
+                      </RadioGroup>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
 
             {/* Ajánlott Termékek */}
             {products.length > 0 && (

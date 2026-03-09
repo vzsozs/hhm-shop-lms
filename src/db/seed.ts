@@ -28,15 +28,15 @@ async function seed() {
   console.log("Kategóriák létrehozása...");
   const newCategories = await db.insert(schema.categories).values([
     {
-      slug: "oktatas",
+      slug: { hu: "oktatas", en: "education", sk: "vzdelavanie" },
       name: { hu: "Oktatás", en: "Education", sk: "Vzdelávanie" }
     },
     {
-      slug: "hardver",
+      slug: { hu: "hardver", en: "hardware", sk: "hardver" },
       name: { hu: "Hardverek és Eszközök", en: "Hardware & Tools", sk: "Hardvér a Nástroje" }
     },
     {
-      slug: "csomagok",
+      slug: { hu: "csomagok", en: "bundles", sk: "balicky" },
       name: { hu: "Csomagajánlatok", en: "Bundles", sk: "Balíčky" }
     }
   ]).returning();
@@ -47,7 +47,7 @@ async function seed() {
   console.log("Termékek létrehozása...");
   const newProducts = await db.insert(schema.products).values([
     {
-      slug: "hhm-kurzus",
+      slug: { hu: "hhm-kurzus", en: "hhm-course", sk: "hhm-kurz" },
       name: { hu: "Prémium HHM Kurzus", en: "Premium HHM Course", sk: "Prémiový HHM Kurz" },
       description: {
         hu: "A legátfogóbb zenei produceri és hangkeverési kurzus Magyarországon.",
@@ -70,7 +70,7 @@ async function seed() {
       layoutTemplate: "STANDARD"
     },
     {
-      slug: "halado-hangkeveres",
+      slug: { hu: "halado-hangkeveres", en: "advanced-mixing", sk: "pokrocile-mixovanie" },
       name: { hu: "Haladó Hangkeverés Mesterfokon", en: "Advanced Audio Mixing", sk: "Pokročilé mixovanie zvuku" },
       description: { hu: "Profi stúdió technikák EQ-hoz és kompresszorokhoz.", en: "", sk: "" },
       shortDescription: { hu: "Lépj a következő szintre", en: "", sk: "" },
@@ -82,7 +82,7 @@ async function seed() {
       layoutTemplate: "VIDEO_CENTERED"
     },
     {
-      slug: "kezdo-hangmester-csomag",
+      slug: { hu: "kezdo-hangmester-csomag", en: "beginner-audio-bundle", sk: "balicek-pre-zaciatocnikov" },
       name: { hu: "Kezdő Hangmesteri Csomag", en: "Beginner Audio Engineer Bundle", sk: "Balíček pre začiatočníkov" },
       description: { hu: "Induló fizikai eszközcsomag", en: "", sk: "" },
       shortDescription: { hu: "Minden ami kell.", en: "", sk: "" },
@@ -94,7 +94,7 @@ async function seed() {
       layoutTemplate: "STANDARD"
     },
     {
-      slug: "hhm-studio-fejhalkgato",
+      slug: { hu: "hhm-studio-fejhalkgato", en: "hhm-studio-headphones", sk: "hhm-studiove-sluchadla" },
       name: { hu: "HHM Stúdió Fejhallgató PRO", en: "HHM Studio Headphones PRO", sk: "HHM Štúdiové Slúchadlá" },
       description: { hu: "Referencia hangzás a tökéletes mixhez", en: "", sk: "" },
       shortDescription: { hu: "Limitált kiadás", en: "", sk: "" },
@@ -108,7 +108,7 @@ async function seed() {
       layoutTemplate: "STANDARD"
     },
     {
-      slug: "meditacio-hangterapia",
+      slug: { hu: "meditacio-hangterapia", en: "meditation-sound-therapy", sk: "zvukova-terapia" },
       name: { hu: "Hangterápia és Meditáció 432Hz", en: "Sound Therapy & Meditation", sk: "Zvuková Terapia" },
       description: { hu: "Számonként lebontott 432Hz-es audio anyagok.", en: "", sk: "" },
       shortDescription: { hu: "Relaxálj és alkoss.", en: "", sk: "" },

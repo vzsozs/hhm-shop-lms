@@ -51,6 +51,7 @@ export function useProductForm(initialData?: Partial<ProductFormValues>, product
       priority: 0,
       layoutTemplate: "STANDARD",
       categoryIds: [],
+      familyProductIds: [],
     },
   });
 
@@ -110,6 +111,7 @@ export function useProductForm(initialData?: Partial<ProductFormValues>, product
       priority: values.priority,
       layoutTemplate: values.layoutTemplate,
       categoryIds: values.categoryIds || [],
+      familyProductIds: values.familyProductIds || [],
     };
 
     const result = productId 

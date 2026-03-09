@@ -86,7 +86,7 @@ export const productFormSchema = z.object({
   priority: rhfNumberField.optional().default(0),
   layoutTemplate: z.enum(["STANDARD", "VIDEO_CENTERED", "DOCUMENTARY"]).default("STANDARD"),
   categoryIds: z.array(z.string().uuid()).optional().default([]),
-
+  familyProductIds: z.array(z.string().uuid()).optional().default([]),
 }).superRefine((data, ctx) => {
   // Feltételes validáció fizikai termékeknél a variánsokon
   if (data.type === "physical") {
@@ -160,6 +160,14 @@ export const createProductServerSchema = z.object({
   })).optional().default([]),
   // Kategória azonosítók listája (opcionális)
   categoryIds: z.array(z.string().uuid()).optional().default([]),
+  // Termékcsalád tagok azonosítói (opcionális)
+  familyProductIds: z.array(z.string().uuid()).optional().default([]),
+  
+  slug: z.object({
+    hu: z.string().optional().default(""),
+    en: z.string().optional().default(""),
+    sk: z.string().optional().default(""),
+  }).optional(),
   
   status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
   priority: z.number().optional().default(0),
@@ -203,7 +211,7 @@ export const categoryServerSchema = z.object({
     en: z.string().optional().default(""),
     sk: z.string().optional().default(""),
   }),
-  slug: z.string().min(2),
+  slug: z.union([z.string(), i18nStringSchema]).transform(val => typeof val === 'string' ? { hu: val, en: "", sk: "" } : val),
   parentId: z.string().uuid().optional().nullable().or(z.literal("")).or(z.literal("none")).transform(val => (val === "" || val === "none") ? null : val),
 });
 export type CategoryServerPayload = z.infer<typeof categoryServerSchema>;

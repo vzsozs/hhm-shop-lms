@@ -50,7 +50,7 @@ export function ProductForm({ categories = [], products = [], initialData, produ
   const { form, isPending, onSubmit, productType, moveMedia, removeMedia } = useProductForm(initialData, productId);
   const isEditMode = !!initialData;
   
-  const { fields: variantFields, append: appendVariant, remove: removeVariant } = useFieldArray({
+  const { fields: variantFields } = useFieldArray({
     control: form.control,
     name: "variants",
   });
@@ -66,6 +66,7 @@ export function ProductForm({ categories = [], products = [], initialData, produ
   });
   
   const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([]);
+  const [familySearch, setFamilySearch] = useState("");
   const objectUrlsRef = useRef<Set<string>>(new Set());
 
   // Cleanup memory on unmount for object URLs
@@ -286,20 +287,12 @@ export function ProductForm({ categories = [], products = [], initialData, produ
             {/* Variációk */}
             <div>
               <div className={styles.sectionHeader}>
-                <h3 className={styles.sectionTitle}>Termék Variációk (kiszerelések, árak)</h3>
-                <Button type="button" onClick={() => appendVariant({ name_hu: "", name_en: "", name_sk: "", sku: "", priceHuf: 0, priceEur: 0, stock: 0, weight: 0, width: 0, height: 0, depth: 0 })} className={styles.iconAddBtn}>
-                  <Plus className="h-4 w-4" />
-                </Button>
+                <h3 className={styles.sectionTitle}>Árazás és Készlet</h3>
               </div>
               
               <div className="space-y-4">
-                {variantFields.map((field, index) => (
+                {variantFields.slice(0, 1).map((field, index) => (
                   <div key={field.id} className={styles.sectionContent}>
-                    {variantFields.length > 1 && (
-                      <Button type="button" className={`absolute top-4 right-4 ${styles.iconDeleteBtn}`} onClick={() => removeVariant(index)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
                     
                     {/* Rejtett mező az adatbázis ID megőrzésére, különben a React Hook Form felülírja! */}
                     <input type="hidden" {...form.register(`variants.${index}.id` as const)} />
@@ -578,6 +571,67 @@ export function ProductForm({ categories = [], products = [], initialData, produ
               </div>
             </div>
 
+            {/* Termékcsalád (Product Family) */}
+            {products.length > 0 && (
+              <FormField
+                control={form.control}
+                name="familyProductIds"
+                render={() => (
+                  <FormItem>
+                    <div className={styles.sectionHeader}>
+                      <FormLabel className={styles.sectionTitle}>Termékcsalád tagjai</FormLabel>
+                      <div className="relative max-w-xs w-[250px]">
+                        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
+                        <Input 
+                          placeholder="Termék keresése..." 
+                          className={`pr-10 ${styles.inputWrapper} ${styles.input}`} 
+                          value={familySearch}
+                          onChange={(e) => setFamilySearch(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 bg-admin-bg p-4 rounded-xl max-h-[300px] overflow-y-auto">
+                      {products
+                        .filter(p => p.id !== productId && (p.name?.hu?.toLowerCase().includes(familySearch.toLowerCase()) || p.name?.en?.toLowerCase().includes(familySearch.toLowerCase())))
+                        .map((product) => (
+                        <FormField
+                          key={product.id}
+                          control={form.control}
+                          name="familyProductIds"
+                          render={({ field }) => {
+                            return (
+                              <FormItem key={product.id}>
+                                <FormLabel className={`${styles.checkboxItem} w-full m-0`}>
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value?.includes(product.id)}
+                                      onCheckedChange={(checked) => {
+                                        return checked
+                                          ? field.onChange([...(field.value || []), product.id])
+                                          : field.onChange((field.value?.filter((value: string) => value !== product.id)) || [])
+                                      }}
+                                      className={styles.checkbox}
+                                    />
+                                  </FormControl>
+                                  <span className="font-normal cursor-pointer line-clamp-2 text-white/80">
+                                    {product.name?.hu || "Termék"}
+                                  </span>
+                                </FormLabel>
+                              </FormItem>
+                            )
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-xs text-white/40 mt-2 italic px-2">
+                       A kiválasztott termékek egy közös csoportba (variációba) kerülnek.
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             {/* Ajánlott Termékek */}
             {products.length > 0 && (
               <FormField
@@ -587,13 +641,11 @@ export function ProductForm({ categories = [], products = [], initialData, produ
                   <FormItem>
                     <div className={styles.sectionHeader}>
                       <FormLabel className={styles.sectionTitle}>Ajánlott termékek</FormLabel>
-                      <div className="relative max-w-xs w-[200px]">
-                        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
-                        <Input placeholder="Termék keresése" className={`pr-10 ${styles.inputWrapper} ${styles.input}`} />
-                      </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 bg-admin-bg p-4 rounded-xl">
-                      {products.map((product) => (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 bg-admin-bg p-4 rounded-xl max-h-[300px] overflow-y-auto">
+                      {products
+                        .filter(p => p.id !== productId)
+                        .map((product) => (
                         <FormField
                           key={product.id}
                           control={form.control}

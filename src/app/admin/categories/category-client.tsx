@@ -114,7 +114,7 @@ export function CategoryClient({ categories, flatCategories }: CategoryClientPro
                       )}
                       {nameHu}
                     </TableCell>
-                    <TableCell className="text-white/70 text-sm">{cat.slug}</TableCell>
+                    <TableCell className="text-white/70 text-sm">{typeof cat.slug === 'object' && cat.slug !== null ? cat.slug.hu || Object.values(cat.slug)[0] : String(cat.slug)}</TableCell>
                     <TableCell className="text-white/50 text-sm">
                       {cat.depth > 0 ? cat.parentNameHu : "-"}
                     </TableCell>

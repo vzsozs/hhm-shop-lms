@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import { useState } from 'react';
@@ -108,7 +109,7 @@ export default function Header() {
        )}
        </div>
 
-       <h1 className="relative font-cormorant font-medium text-[38px] text-white text-center z-10 w-full px-4 drop-shadow-md">
+       <h1 className="relative font-cormorant font-medium text-[38px] text-white text-center z-10 w-full px-4 drop-shadow-md tracking-[0.01em]">
          Hangakadémia webshop
        </h1>
     </header>

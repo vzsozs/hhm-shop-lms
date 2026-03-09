@@ -29,6 +29,20 @@
       "when": 1772915009272,
       "tag": "0003_calm_ozymandias",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1772966275215,
+      "tag": "0004_ambiguous_malice",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1772970164951,
+      "tag": "0005_brave_bushwacker",
+      "breakpoints": true
     }
   ]
 }

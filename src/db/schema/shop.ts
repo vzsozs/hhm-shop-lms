@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, integer, decimal, jsonb, pgEnum, AnyPgColumn } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, integer, decimal, jsonb, pgEnum, AnyPgColumn, index } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 
 // Enumok a terméktípusokhoz, mediákhoz és rendelés státuszokhoz
@@ -10,7 +10,7 @@ export const orderStatusEnum = pgEnum("order_status", ["pending", "paid", "shipp
 export const products = pgTable("products", {
   id: uuid("id").defaultRandom().primaryKey(),
   // SEO-barát, egyedi URL azonosító (pl. "nagy-kezmuves-hangtal")
-  slug: varchar("slug", { length: 500 }).unique().notNull(),
+  slug: jsonb("slug").notNull(), // { hu: string, en: string, sk: string }
   name: jsonb("name").notNull(), // { hu: string, en: string, sk: string }
   brand: varchar("brand", { length: 255 }),
   description: jsonb("description"), // { hu: string, en: string, sk: string }
@@ -21,9 +21,12 @@ export const products = pgTable("products", {
   status: productStatusEnum("status").default("ACTIVE").notNull(),
   priority: integer("priority").default(0).notNull(),
   layoutTemplate: varchar("layout_template", { length: 100 }).default("STANDARD").notNull(),
+  groupId: uuid("group_id"), // Termékcsalád összekapcsolásához
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  groupIdIdx: index("products_group_id_idx").on(table.groupId)
+}));
 
 export const productVariants = pgTable("product_variants", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -93,7 +96,7 @@ export const categories = pgTable("categories", {
   parentId: uuid("parent_id").references((): AnyPgColumn => categories.id, { onDelete: 'set null' }),
   name: jsonb("name").notNull(), // { hu: string, en: string, sk: string }
   description: jsonb("description"), // { hu: string, en: string, sk: string }
-  slug: varchar("slug", { length: 255 }).unique().notNull(),
+  slug: jsonb("slug").notNull(), // { hu: string, en: string, sk: string }
 });
 
 export const productCategories = pgTable("product_categories", {

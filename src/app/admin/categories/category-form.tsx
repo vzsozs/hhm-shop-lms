@@ -32,7 +32,7 @@ interface CategoryDoc {
   id: string;
   name: Record<string, string>;
   description?: Record<string, string> | null;
-  slug: string;
+  slug: Record<string, string>;
   parentId?: string | null;
 }
 
@@ -55,7 +55,7 @@ export function CategoryForm({ initialData, categories, onSuccess, onCancel }: C
     description_hu: initialData?.description?.hu || "",
     description_en: initialData?.description?.en || "",
     description_sk: initialData?.description?.sk || "",
-    slug: initialData?.slug || "",
+    slug: (initialData?.slug as any)?.hu || "",
     parentId: initialData?.parentId || "none",
   };
 
@@ -88,7 +88,11 @@ export function CategoryForm({ initialData, categories, onSuccess, onCancel }: C
           en: data.description_en || "",
           sk: data.description_sk || "",
         },
-        slug: data.slug,
+        slug: {
+          hu: data.slug,
+          en: "",
+          sk: "",
+        },
         parentId: (data.parentId === "none" || data.parentId === "") ? null : data.parentId,
       };
 

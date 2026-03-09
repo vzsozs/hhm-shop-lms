@@ -64,7 +64,7 @@ export default async function AdminCategoriesPage() {
   // Csak az egyszerű listát adjuk át a formnak a selecthoz (szülő választó)
   const flatCategoriesForSelect = allCategories.map(c => ({
     id: c.id,
-    name: (c.name as Record<string, string>)?.hu || c.slug,
+    name: (c.name as Record<string, string>)?.hu || (c.slug as any)?.hu || "Névtelen",
   }));
 
   return (

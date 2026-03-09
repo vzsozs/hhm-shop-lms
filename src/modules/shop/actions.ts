@@ -5,32 +5,31 @@ import { products, productVariants, productMedia, productCategories, productReco
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createProductServerSchema, CreateProductPayload } from "./schemas";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
-// SEO-barát slug generáló a termék nevéből (hu alapján, vagy bármely elérhető nyelvből)
-function generateSlug(name: Record<string, string>): string {
-  const base = name.hu || name.en || name.sk || "termek";
-  return base
+// SEO-barát slug generáló a termék nevéből
+function generateSlug(text: string): string {
+  return text
     .toLowerCase()
-    .normalize("NFD") // Ékezetek lebontása (á → a, é → e, stb.)
-    .replace(/[\u0300-\u036f]/g, "") // Ékezetjelek eltávolítása
-    .replace(/[^a-z0-9\s-]/g, "") // Csak betű, szám, szóköz, kötőjel marad
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s-]/g, "")
     .trim()
-    .replace(/\s+/g, "-") // Szóközök → kötőjel
-    .replace(/-+/g, "-"); // Dupla kötőjel összevonása
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
 }
 
 // Ha a slug már létezik, egyedi suffix hozzáadása (-2, -3, stb.)
-async function ensureUniqueSlug(baseSlug: string): Promise<string> {
+async function ensureUniqueSlug(baseSlug: string, lang: string, excludeId?: string): Promise<string> {
   let slug = baseSlug;
   let counter = 2;
   while (true) {
-    const [existing] = await db
-      .select({ id: products.id })
-      .from(products)
-      .where(eq(products.slug, slug))
-      .limit(1);
-    if (!existing) break;
+    // JSONB keresés Drizzle-ben
+    const existing = await db.execute(
+      sql`SELECT id FROM products WHERE slug->>${lang} = ${slug} ${excludeId ? sql`AND id != ${excludeId}` : sql``} LIMIT 1`
+    );
+    
+    if (existing.length === 0) break;
     slug = `${baseSlug}-${counter}`;
     counter++;
   }
@@ -39,52 +38,70 @@ async function ensureUniqueSlug(baseSlug: string): Promise<string> {
 
 export async function createProduct(formData: CreateProductPayload) {
   try {
-    // Szigorú szerveroldali validálás a központosított sémával
     const validated = createProductServerSchema.parse(formData);
 
-    // Slug generálás a termék nevéből
-    const baseSlug = generateSlug(validated.name as Record<string, string>);
-    const slug = await ensureUniqueSlug(baseSlug);
+    // Multilingual Slugs generálása
+    const slug = {
+      hu: await ensureUniqueSlug(generateSlug(validated.name.hu), "hu"),
+      en: validated.name.en ? await ensureUniqueSlug(generateSlug(validated.name.en), "en") : "",
+      sk: validated.name.sk ? await ensureUniqueSlug(generateSlug(validated.name.sk), "sk") : "",
+    };
 
-    // Tranzakció indítása az inkonzisztenciák elkerülésére
     const result = await db.transaction(async (tx) => {
-      // 1. Termék létrehozása a Products táblában (JSONB nevekkel és leírásokkal)
+      // 1. Group ID kezelése
+      let groupId = null;
+      if (validated.familyProductIds && validated.familyProductIds.length > 0) {
+        // Megnézzük, van-e már groupId a kiválasztott termékek között
+        const familyProducts = await tx.execute(
+          sql`SELECT group_id FROM products WHERE id IN (${sql.join(validated.familyProductIds.map(id => sql`${id}`), sql`, `)}) AND group_id IS NOT NULL LIMIT 1`
+        );
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        groupId = (familyProducts[0] as any)?.group_id || crypto.randomUUID();
+      }
+
+      // 2. Termék létrehozása
       const [newProduct] = await tx
         .insert(products)
         .values({
-          slug, // Automatikusan generált SEO slug
+          slug,
           name: validated.name as Record<string, string>,
           description: validated.description as Record<string, string>,
           shortDescription: validated.shortDescription as Record<string, string>,
           longDescription: validated.longDescription as Record<string, string>,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           specifications: (validated.specifications || []) as any,
           type: validated.type,
           status: validated.status,
           priority: validated.priority,
           layoutTemplate: validated.layoutTemplate,
+          groupId,
         })
         .returning();
 
-      // 2. Variánsok létrehozása
-      if (validated.variants && validated.variants.length > 0) {
-        await tx.insert(productVariants).values(
-          validated.variants.map((v) => ({
-            productId: newProduct.id,
-            name: v.name as Record<string, string>,
-            sku: v.sku || `DIG-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-            priceHuf: v.priceHuf,
-            priceEur: v.priceEur.toString(),
-            stock: v.stock || 0,
-            weight: v.weight ? v.weight.toString() : null,
-            width: v.width ? v.width.toString() : null,
-            height: v.height ? v.height.toString() : null,
-            depth: v.depth ? v.depth.toString() : null,
-          }))
+      // 3. Ha van csoport, frissítjük a többi tagot is
+      if (groupId && validated.familyProductIds && validated.familyProductIds.length > 0) {
+        await tx.execute(
+          sql`UPDATE products SET group_id = ${groupId} WHERE id IN (${sql.join(validated.familyProductIds.map(id => sql`${id}`), sql`, `)})`
         );
       }
 
-      // 3. Média mentése a Product Media táblába
+      // 4. Variáns létrehozása (mostantól csak egy per termék az adminon, de a DB-ben maradhat lista)
+      if (validated.variants && validated.variants.length > 0) {
+        const v = validated.variants[0]; // Csak az elsőt vesszük (Admin UI korlátozás)
+        await tx.insert(productVariants).values({
+          productId: newProduct.id,
+          name: v.name as Record<string, string>,
+          sku: v.sku || `SKU-${Date.now()}`,
+          priceHuf: v.priceHuf,
+          priceEur: v.priceEur.toString(),
+          stock: v.stock || 0,
+          weight: v.weight ? v.weight.toString() : null,
+          width: v.width ? v.width.toString() : null,
+          height: v.height ? v.height.toString() : null,
+          depth: v.depth ? v.depth.toString() : null,
+        });
+      }
+
+      // 5. Média, Kategóriák stb. maradnak hasonlóan...
       if (validated.media && validated.media.length > 0) {
         await tx.insert(productMedia).values(
           validated.media.map((m, index) => ({
@@ -96,7 +113,6 @@ export async function createProduct(formData: CreateProductPayload) {
         );
       }
 
-      // 4. Kategória hozzárendelések mentése
       if (validated.categoryIds && validated.categoryIds.length > 0) {
         await tx.insert(productCategories).values(
           validated.categoryIds.map((categoryId: string) => ({
@@ -106,7 +122,6 @@ export async function createProduct(formData: CreateProductPayload) {
         );
       }
 
-      // 5. Ajánlások mentése
       if (validated.recommendations && validated.recommendations.length > 0) {
         await tx.insert(productRecommendations).values(
           validated.recommendations.map((recId: string) => ({
@@ -116,7 +131,6 @@ export async function createProduct(formData: CreateProductPayload) {
         );
       }
 
-      // 6. Csatolmányok mentése
       if (validated.attachments && validated.attachments.length > 0) {
         await tx.insert(productAttachments).values(
           validated.attachments.map((att) => ({
@@ -130,7 +144,6 @@ export async function createProduct(formData: CreateProductPayload) {
       return newProduct;
     });
 
-    // Sikeres mentés után újra-generáljuk az admin és a publikus termékoldalt
     revalidatePath("/admin");
     revalidatePath("/admin/products");
     revalidatePath("/products");
@@ -139,7 +152,6 @@ export async function createProduct(formData: CreateProductPayload) {
   } catch (error) {
     console.error("Hiba a termék létrehozásakor:", error);
     if (error instanceof z.ZodError) {
-       // Kinyerjük a validációs hibaüzenetet
       return { success: false, error: error.issues[0]?.message || "Validációs hiba" };
     }
     return { success: false, error: "Váratlan hiba történt az adatbázisba írás során." };
@@ -151,7 +163,33 @@ export async function updateProduct(id: string, formData: CreateProductPayload) 
     const validated = createProductServerSchema.parse(formData);
 
     const result = await db.transaction(async (tx) => {
-      // 1. Termék frissítése
+      // 1. Group ID szinkronizálása
+      let groupId = null;
+      // Meglévő groupId lekérése
+      const [currentProduct] = await tx.select({ groupId: products.groupId }).from(products).where(eq(products.id, id));
+      groupId = currentProduct?.groupId;
+
+      if (validated.familyProductIds && validated.familyProductIds.length > 0) {
+        if (!groupId) {
+          // Ha eddig nem volt csoportja, keresünk egyet a tagok között vagy újat generálunk
+          const familyWithGroup = await tx.execute(
+            sql`SELECT group_id FROM products WHERE id IN (${sql.join(validated.familyProductIds.map(fid => sql`${fid}`), sql`, `)}) AND group_id IS NOT NULL LIMIT 1`
+          );
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          groupId = (familyWithGroup[0] as any)?.group_id || crypto.randomUUID();
+        }
+        
+        // Összes tag frissítése (régi tagok is maradhatnak benne, de az admin csak az újakat küldi)
+        await tx.execute(
+          sql`UPDATE products SET group_id = ${groupId} WHERE id IN (${sql.join([...validated.familyProductIds, id].map(fid => sql`${fid}`), sql`, `)})`
+        );
+      } else if (groupId) {
+         // Ha kiürítették a csoportot, ezt a terméket kivesszük (groupId = null)
+         // Kérdés: A többiek maradjanak csoportban? Általában igen.
+         groupId = null;
+      }
+
+      // 2. Termék frissítése
       const [updatedProduct] = await tx
         .update(products)
         .set({
@@ -159,66 +197,60 @@ export async function updateProduct(id: string, formData: CreateProductPayload) 
           description: validated.description as Record<string, string>,
           shortDescription: validated.shortDescription as Record<string, string>,
           longDescription: validated.longDescription as Record<string, string>,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           specifications: (validated.specifications || []) as any,
           type: validated.type,
           status: validated.status,
           priority: validated.priority,
           layoutTemplate: validated.layoutTemplate,
+          groupId,
         })
         .where(eq(products.id, id))
         .returning();
 
-      // 2. Variánsok szinkronizálása (upsert / delete logika)
-      const existingVariants = await tx.select().from(productVariants).where(eq(productVariants.productId, id));
-      
-      const payloadVarIds = validated.variants?.map((v) => v.id).filter(Boolean) || [];
-      
-      // Amik nincsenek a listában, azokat beszéljük / töröljük
-      const variantsToDelete = existingVariants.filter(ev => !payloadVarIds.includes(ev.id));
-      if (variantsToDelete.length > 0) {
-         for (const vdel of variantsToDelete) {
-           await tx.delete(productVariants).where(eq(productVariants.id, vdel.id));
-         }
-      }
-
-      // Upsert
-      if (validated.variants) {
-        for (const v of validated.variants) {
-          if (v.id) {
-            await tx.update(productVariants)
-              .set({
-                name: v.name as Record<string, string>,
-                sku: v.sku,
-                priceHuf: v.priceHuf,
-                priceEur: v.priceEur.toString(),
-                stock: v.stock,
-                weight: v.weight ? v.weight.toString() : null,
-                width: v.width ? v.width.toString() : null,
-                height: v.height ? v.height.toString() : null,
-                depth: v.depth ? v.depth.toString() : null,
-              })
-              .where(eq(productVariants.id, v.id));
-          } else {
-            await tx.insert(productVariants).values({
-              productId: id,
+      // 3. Variáns frissítése (Admin mostantól csak az elsőt kezeli)
+      if (validated.variants && validated.variants.length > 0) {
+        const v = validated.variants[0];
+        const existingVariants = await tx.select().from(productVariants).where(eq(productVariants.productId, id));
+        
+        if (existingVariants.length > 0) {
+           await tx.update(productVariants)
+            .set({
               name: v.name as Record<string, string>,
-              sku: v.sku || `DIG-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+              sku: v.sku,
               priceHuf: v.priceHuf,
               priceEur: v.priceEur.toString(),
-              stock: v.stock || 0,
+              stock: v.stock,
               weight: v.weight ? v.weight.toString() : null,
               width: v.width ? v.width.toString() : null,
               height: v.height ? v.height.toString() : null,
               depth: v.depth ? v.depth.toString() : null,
-            });
-          }
+            })
+            .where(eq(productVariants.id, existingVariants[0].id));
+            
+           // A többi variánst (ha volt régebben) töröljük a konzisztencia miatt
+           if (existingVariants.length > 1) {
+             for (let i = 1; i < existingVariants.length; i++) {
+               await tx.delete(productVariants).where(eq(productVariants.id, existingVariants[i].id));
+             }
+           }
+        } else {
+          await tx.insert(productVariants).values({
+            productId: id,
+            name: v.name as Record<string, string>,
+            sku: v.sku || `SKU-${Date.now()}`,
+            priceHuf: v.priceHuf,
+            priceEur: v.priceEur.toString(),
+            stock: v.stock || 0,
+            weight: v.weight ? v.weight.toString() : null,
+            width: v.width ? v.width.toString() : null,
+            height: v.height ? v.height.toString() : null,
+            depth: v.depth ? v.depth.toString() : null,
+          });
         }
       }
 
-      // 3. Média szinkronizálása (Törlünk mindent és újra felvisszük az új sorrenddel)
+      // 4. Média, Kategóriák, Ajánlások, Csatolmányok szinkronizálása
       await tx.delete(productMedia).where(eq(productMedia.productId, id));
-
       if (validated.media && validated.media.length > 0) {
         await tx.insert(productMedia).values(
           validated.media.map((m, index) => ({
@@ -230,7 +262,6 @@ export async function updateProduct(id: string, formData: CreateProductPayload) 
         );
       }
 
-      // 4. Kategória szinkronizálása
       await tx.delete(productCategories).where(eq(productCategories.productId, id));
       if (validated.categoryIds && validated.categoryIds.length > 0) {
         await tx.insert(productCategories).values(
@@ -241,7 +272,6 @@ export async function updateProduct(id: string, formData: CreateProductPayload) 
         );
       }
 
-      // 5. Ajánlások szinkronizálása
       await tx.delete(productRecommendations).where(eq(productRecommendations.productId, id));
       if (validated.recommendations && validated.recommendations.length > 0) {
         await tx.insert(productRecommendations).values(
@@ -252,7 +282,6 @@ export async function updateProduct(id: string, formData: CreateProductPayload) 
         );
       }
 
-      // 6. Csatolmányok szinkronizálása
       await tx.delete(productAttachments).where(eq(productAttachments.productId, id));
       if (validated.attachments && validated.attachments.length > 0) {
         await tx.insert(productAttachments).values(
@@ -270,7 +299,13 @@ export async function updateProduct(id: string, formData: CreateProductPayload) 
     revalidatePath("/admin");
     revalidatePath("/admin/products");
     revalidatePath("/products");
-    revalidatePath(`/products/${result.slug}`);
+    // Multilingual slug revalidation
+    if (result.slug && typeof result.slug === 'object') {
+      const slugs = result.slug as Record<string, string>;
+      Object.values(slugs).forEach(s => {
+        if (s) revalidatePath(`/products/${s}`);
+      });
+    }
     
     return { success: true, product: result };
 
@@ -313,19 +348,27 @@ export async function duplicateProduct(id: string) {
     const attachments = await db.select().from(productAttachments).where(eq(productAttachments.productId, id));
 
     // Új alap adatok és módosított slug
-    const newName = { ...originalProduct.name as object, hu: `${(originalProduct.name as Record<string,string>).hu} (Másolat)` };
-    const baseSlug = generateSlug(newName as Record<string, string>);
-    const slug = await ensureUniqueSlug(baseSlug);
+    const newName = { 
+      hu: `${(originalProduct.name as any).hu} (Másolat)`,
+      en: (originalProduct.name as any).en ? `${(originalProduct.name as any).en} (Copy)` : "",
+      sk: (originalProduct.name as any).sk ? `${(originalProduct.name as any).sk} (Kópia)` : "",
+    };
+
+    const slug = {
+      hu: await ensureUniqueSlug(generateSlug(newName.hu), "hu"),
+      en: newName.en ? await ensureUniqueSlug(generateSlug(newName.en), "en") : "",
+      sk: newName.sk ? await ensureUniqueSlug(generateSlug(newName.sk), "sk") : "",
+    };
 
     const result = await db.transaction(async (tx) => {
       // 1. Új Termék
       const [newProduct] = await tx.insert(products).values({
         slug,
         name: newName,
-        description: originalProduct.description,
-        shortDescription: originalProduct.shortDescription,
-        longDescription: originalProduct.longDescription,
-        specifications: originalProduct.specifications,
+        description: originalProduct.description as Record<string, string>,
+        shortDescription: originalProduct.shortDescription as Record<string, string>,
+        longDescription: originalProduct.longDescription as Record<string, string>,
+        specifications: originalProduct.specifications as any,
         type: originalProduct.type,
         status: "INACTIVE", // Másolatok mindig piszkozatként jöjjenek létre
         priority: originalProduct.priority,
@@ -403,14 +446,11 @@ async function ensureUniqueCategorySlug(baseSlug: string, excludeId?: string): P
   let slug = baseSlug;
   let counter = 2;
   while (true) {
-    const query = db
-      .select({ id: categories.id })
-      .from(categories)
-      .where(eq(categories.slug, slug))
-      .limit(1);
+    const existing = await db.execute(
+      sql`SELECT id FROM categories WHERE slug->>'hu' = ${slug} ${excludeId ? sql`AND id != ${excludeId}` : sql``} LIMIT 1`
+    );
     
-    const [existing] = await query;
-    if (!existing || existing.id === excludeId) break;
+    if (existing.length === 0) break;
     slug = `${baseSlug}-${counter}`;
     counter++;
   }
@@ -423,8 +463,9 @@ import { CategoryServerPayload, categoryServerSchema } from "./schemas";
 export async function upsertCategory(formData: CategoryServerPayload) {
   try {
     const validated = categoryServerSchema.parse(formData);
-    const baseSlug = generateCategorySlug(validated.slug || validated.name.hu);
-    const slug = await ensureUniqueCategorySlug(baseSlug, validated.id);
+    const baseSlug = generateCategorySlug(validated.slug.hu || validated.name.hu);
+    const slugHu = await ensureUniqueCategorySlug(baseSlug, validated.id);
+    const slug = { ...validated.slug, hu: slugHu };
 
     if (validated.id) {
       // Update
@@ -432,7 +473,7 @@ export async function upsertCategory(formData: CategoryServerPayload) {
         .set({
           name: validated.name as Record<string, string>,
           description: validated.description as Record<string, string>,
-          slug,
+          slug: slug as Record<string, string>,
           parentId: validated.parentId,
         })
         .where(eq(categories.id, validated.id));
@@ -442,7 +483,7 @@ export async function upsertCategory(formData: CategoryServerPayload) {
         .values({
           name: validated.name as Record<string, string>,
           description: validated.description as Record<string, string>,
-          slug,
+          slug: slug as Record<string, string>,
           parentId: validated.parentId,
         });
     }

@@ -132,8 +132,8 @@ export default async function AdminProductsPage({ searchParams }: { searchParams
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="font-medium text-white">
-                    <div className="truncate max-w-[200px] md:max-w-[250px]" title={nameHu}>{nameHu}</div>
+                  <TableCell className="font-medium text-white whitespace-normal">
+                    <div className="line-clamp-2 max-w-[220px] text-sm leading-snug" title={nameHu}>{nameHu}</div>
                   </TableCell>
                   <TableCell className="text-right text-white/70 text-sm whitespace-nowrap">{dateAdded}</TableCell>
                   <TableCell className="text-right text-white font-medium">{priceDisp} Ft</TableCell>

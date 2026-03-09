@@ -127,8 +127,8 @@ export function ProductFilters({
           </SelectTrigger>
           <SelectContent className="bg-white border-brand-bronze/20 rounded-xl shadow-lg text-brand-black">
             <SelectItem value="all" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">Minden Típus</SelectItem>
-            <SelectItem value="physical" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">Fizikai Termékek</SelectItem>
-            <SelectItem value="digital" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">Digitális Letöltések</SelectItem>
+            <SelectItem value="physical" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">Termékek</SelectItem>
+            <SelectItem value="digital" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">Tanfolyamok</SelectItem>
           </SelectContent>
         </Select>
       </div>

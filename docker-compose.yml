@@ -25,7 +25,6 @@ services:
     volumes:
       - ./uploads:/app/public/uploads
     environment:
-      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
       - NEXT_PUBLIC_APP_URL=http://185.208.227.129:3000
     depends_on:
       - db

@@ -32,7 +32,7 @@ export function ProductCard({ product, lang }: { product: ProductListItem; lang:
             <img
               src="/assets/PalAdri-logo-2023-Vegleges-Lezer-light.svg"
               alt="Hangakadémia"
-              className="w-24 h-auto opacity-40"
+              className="w-52 h-auto opacity-100"
             />
           </div>
         )}

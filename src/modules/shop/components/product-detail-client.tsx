@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import { ProductDetailItem } from "@/modules/shop/queries";
 import { Button } from "@/components/ui/button";
@@ -199,17 +200,25 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
 
             {/* Fő Oszlop Tartalom */}
             <div className="flex flex-col gap-6 w-full">
-              {/* Főcím és Kategória */}
-              <div className="flex flex-col gap-1">
-               {product.categories.length > 0 && (
-                 <h2 className="font-cormorant text-2xl lg:text-3xl font-bold text-[#d1a052] uppercase tracking-wider leading-tight">
-                   {product.categories[0].name["hu"] || product.categories[0].slug["hu"]}
-                 </h2>
-               )}
-               <h1 className="font-montserrat text-lg lg:text-xl font-bold text-brand-black tracking-widest uppercase leading-tight mb-4">
-                 {product.name["hu"] || "Terméknév"}
-               </h1>
-            </div>
+               <div className="flex flex-col gap-1">
+                {product.group && (
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-brand-bronze bg-brand-bronze/5 px-2 py-0.5 rounded border border-brand-bronze/10">
+                      {product.group.name["hu"]} Termékcsalád
+                    </span>
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-2 mb-2 font-montserrat">
+                  {product.categories.map((c) => (
+                    <span key={c.id} className="text-[10px] font-bold tracking-widest uppercase text-brand-brown/80 bg-brand-bronze/10 px-2 py-1 flex items-center gap-1 rounded-sm">
+                      {c.name["hu"] || c.slug["hu"]}
+                    </span>
+                  ))}
+                </div>
+                <h1 className="font-montserrat text-lg lg:text-2xl font-bold text-brand-black tracking-widest uppercase leading-tight mb-4">
+                  {product.name["hu"] || "Terméknév"}
+                </h1>
+              </div>
 
             {/* Felső Rövid Ismertető Pipa Pontokkal */}
             <div className="text-brand-black/80 text-sm space-y-2 pb-4">
@@ -263,10 +272,67 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
               </Button>
             </div>
 
+            {/* Termékcsalád tagjai (Kártyás megjelenítés) */}
+            {product.groupProducts && product.groupProducts.length > 1 && (
+              <div className="flex flex-col gap-4 mt-6">
+                <div className="flex items-center justify-between border-b border-brand-bronze/10 pb-2">
+                  <h4 className="font-bold text-brand-black text-sm uppercase tracking-wider">A család további tagjai</h4>
+                  <span className="text-[10px] text-brand-black/40 font-medium bg-brand-bronze/5 px-2 py-0.5 rounded">{product.groupProducts.length} termék</span>
+                </div>
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                  {product.groupProducts.map((gp) => {
+                    const isCurrent = gp.id === product.id;
+                    return (
+                      <Link 
+                        key={gp.id}
+                        href={`/products/${gp.slug["hu"]}`}
+                        className={`group/item flex flex-col gap-3 p-3 rounded-xl bg-white border-2 transition-all hover:shadow-md ${isCurrent ? 'border-brand-bronze ring-1 ring-brand-bronze/10' : 'border-brand-bronze/5 hover:border-brand-bronze/20'}`}
+                      >
+                        <div className="relative aspect-square w-full shrink-0 rounded-lg overflow-hidden bg-brand-bronze/5 border border-brand-bronze/10">
+                          {gp.mainImageUrl ? (
+                            <Image 
+                              src={gp.mainImageUrl} 
+                              alt={gp.name["hu"]} 
+                              fill 
+                              className={`object-cover ${isCurrent ? 'opacity-100' : 'opacity-80 group-hover/item:opacity-100'} transition-all`}
+                            />
+                          ) : (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                               <Award className="w-8 h-8 text-brand-bronze/20" />
+                            </div>
+                          )}
+                          {isCurrent && (
+                            <div className="absolute top-2 right-2 bg-brand-bronze text-white p-1 rounded-full shadow-sm z-10">
+                               <Check className="w-3 h-3" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <h5 className={`text-[11px] font-bold font-montserrat uppercase tracking-tight line-clamp-2 ${isCurrent ? 'text-brand-brown' : 'text-brand-black group-hover/item:text-brand-bronze'} transition-colors`}>
+                            {gp.name["hu"]}
+                          </h5>
+                          {gp.shortDescription?.["hu"] && (
+                            <p className="text-[10px] text-brand-black/50 line-clamp-2 leading-tight mt-1 font-montserrat">
+                              {gp.shortDescription["hu"]}
+                            </p>
+                          )}
+                          {isCurrent && (
+                            <span className="text-[9px] font-bold text-brand-bronze mt-2 flex items-center gap-1 uppercase tracking-widest">
+                              <Check size={8} /> Jelenlegi
+                            </span>
+                          )}
+                        </div>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Variációk */}
             {product.variants.length > 1 && (
-              <div className="flex flex-col gap-4 mt-6">
-                <h4 className="font-bold text-brand-black text-sm uppercase tracking-wider border-b border-brand-bronze/10 pb-2">Variációk</h4>
+              <div className="flex flex-col gap-4 mt-8">
+                <h4 className="font-bold text-brand-black text-sm uppercase tracking-wider border-b border-brand-bronze/10 pb-2">Méretek / Variációk</h4>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {product.variants.map((v, i) => (
                     <button 
@@ -280,11 +346,6 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
                       <span className="text-[10px] font-bold leading-tight line-clamp-2">
                         {v.sku ? v.sku : `Variáció ${i + 1}`}
                       </span>
-                      {v.weight && (
-                        <span className="text-[9px] text-brand-black/60">
-                          {v.weight} kg
-                        </span>
-                      )}
                     </button>
                   ))}
                 </div>
@@ -292,9 +353,9 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
             )}
             
             {/* Alsó szöveges leírás, ha a variációk megkövetelik a magyarázatot */}
-            <div className="mt-4 text-xs text-brand-black/70 leading-relaxed">
-              Minden variációhoz egyedi paraméterek tartoznak. Válaszd ki a neked legmegfelelőbbet a fenti opciók közül.
-            </div>
+            {/*<div className="mt-4 text-xs text-brand-black/70 leading-relaxed">
+              Válassz a különböző variációk közül.
+            </div>*/}
 
             </div> {/* Fő Oszlop Tartalom Vége */}
           </div>

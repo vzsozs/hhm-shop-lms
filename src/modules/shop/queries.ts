@@ -59,16 +59,17 @@ export async function getActiveProducts(filters?: ProductListFilters): Promise<P
       minPriceHuf: sql<number>`min(${productVariants.priceHuf})`.mapWith(Number),
       minPriceEur: sql<number>`min(${productVariants.priceEur})`.mapWith(Number),
       mainImageUrl: sql<string>`(
-        SELECT ${productMedia.url}
-        FROM ${productMedia}
-        WHERE ${productMedia.productId} = ${products.id}
-        ORDER BY ${productMedia.order} ASC
+        SELECT url
+        FROM product_media
+        WHERE product_id = ${products.id}
+        AND type = 'IMAGE'
+        ORDER BY "order" ASC
         LIMIT 1
-      )`
+      )`,
+      createdAt: products.createdAt,
     })
     .from(products)
-    .leftJoin(productVariants, eq(products.id, productVariants.productId))
-    .leftJoin(productMedia, eq(products.id, productMedia.productId));
+    .leftJoin(productVariants, eq(products.id, productVariants.productId));
 
   if (conditions.length > 0) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -191,7 +192,7 @@ export type ProductMediaItem = {
 
 export type ProductDetailItem = {
   id: string;
-  slug: Record<string, string>; // SEO-barát URL azonosító
+  slug: Record<string, string>;
   name: Record<string, string>;
   description: Record<string, string> | null;
   shortDescription: Record<string, string> | null;
@@ -203,6 +204,15 @@ export type ProductDetailItem = {
   categories: { id: string; name: Record<string, string>; slug: Record<string, string> }[];
   recommendations?: string[];
   attachments?: { id: string; url: string; name: string }[];
+  groupId: string | null;
+  group?: { id: string; name: Record<string, string>; slug: Record<string, string> } | null;
+  groupProducts?: { 
+    id: string; 
+    name: Record<string, string>; 
+    slug: Record<string, string>; 
+    shortDescription: Record<string, string> | null;
+    mainImageUrl: string | null 
+  }[];
 };
 
 // Termék lekérdezése slug alapján (publikus termékoldalhoz)
@@ -217,7 +227,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
     return null;
   }
 
-  const [productVariantsData, productMediaData, productCategoriesData] = await Promise.all([
+  const [productVariantsData, productMediaData, productCategoriesData, groupData] = await Promise.all([
     db.select().from(productVariants).where(eq(productVariants.productId, productData.id)),
     db.select().from(productMedia).where(eq(productMedia.productId, productData.id)).orderBy(asc(productMedia.order)),
     db
@@ -229,7 +239,50 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
       .from(productCategories)
       .innerJoin(categories, eq(productCategories.categoryId, categories.id))
       .where(eq(productCategories.productId, productData.id)),
+    productData.groupId 
+      ? db.select().from(productGroups).where(eq(productGroups.id, productData.groupId)).limit(1).then(r => r[0])
+      : Promise.resolve(null),
   ]);
+
+  let groupProductsData: { 
+    id: string; 
+    name: Record<string, string>; 
+    slug: Record<string, string>; 
+    shortDescription: Record<string, string> | null;
+    mainImageUrl: string | null 
+  }[] = [];
+
+  if (productData.groupId) {
+    // Fetch group products and their first images using a Join
+    const rawGroupData = await db
+      .select({
+        id: products.id,
+        name: products.name,
+        slug: products.slug,
+        shortDescription: products.shortDescription,
+        mediaUrl: productMedia.url,
+        mediaOrder: productMedia.order,
+      })
+      .from(products)
+      .leftJoin(productMedia, and(eq(products.id, productMedia.productId), eq(productMedia.type, 'IMAGE')))
+      .where(and(eq(products.groupId, productData.groupId), eq(products.status, 'ACTIVE')))
+      .orderBy(asc(products.id), asc(productMedia.order));
+
+    // Group by product id to take the first image for each
+    const grouped = new Map<string, any>();
+    for (const item of rawGroupData) {
+      if (!grouped.has(item.id)) {
+        grouped.set(item.id, {
+          id: item.id,
+          name: item.name as Record<string, string>,
+          slug: item.slug as Record<string, string>,
+          shortDescription: item.shortDescription as Record<string, string> | null,
+          mainImageUrl: item.mediaUrl
+        });
+      }
+    }
+    groupProductsData = Array.from(grouped.values());
+  }
 
   return {
     id: productData.id,
@@ -262,6 +315,19 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
       name: c.name as Record<string, string>,
       slug: c.slug as Record<string, string>,
     })),
+    groupId: productData.groupId,
+    group: groupData ? {
+      id: groupData.id,
+      name: groupData.name as Record<string, string>,
+      slug: groupData.slug as Record<string, string>,
+    } : null,
+    groupProducts: groupProductsData.map(gp => ({
+      id: gp.id,
+      name: gp.name as Record<string, string>,
+      slug: gp.slug as Record<string, string>,
+      shortDescription: gp.shortDescription as Record<string, string> | null,
+      mainImageUrl: gp.mainImageUrl,
+    })),
   };
 }
 
@@ -282,7 +348,8 @@ export async function getProductById(id: string): Promise<ProductDetailItem | nu
     productMediaData, 
     productCategoriesData,
     productRecommendationsData,
-    productAttachmentsData
+    productAttachmentsData,
+    groupData
   ] = await Promise.all([
     db.select().from(productVariants).where(eq(productVariants.productId, id)),
     db.select().from(productMedia).where(eq(productMedia.productId, id)).orderBy(asc(productMedia.order)),
@@ -299,6 +366,9 @@ export async function getProductById(id: string): Promise<ProductDetailItem | nu
       .where(eq(productRecommendations.productId, id)),
     db.select().from(productAttachments)
       .where(eq(productAttachments.productId, id)),
+    productData.groupId 
+      ? db.select().from(productGroups).where(eq(productGroups.id, productData.groupId)).limit(1).then(r => r[0])
+      : Promise.resolve(null),
   ]);
 
   return {
@@ -338,5 +408,11 @@ export async function getProductById(id: string): Promise<ProductDetailItem | nu
       url: a.url,
       name: a.name,
     })),
+    groupId: productData.groupId,
+    group: groupData ? {
+      id: groupData.id,
+      name: groupData.name as Record<string, string>,
+      slug: groupData.slug as Record<string, string>,
+    } : null,
   };
 }

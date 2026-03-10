@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ProductDetailItem } from "@/modules/shop/queries";
 import { Button } from "@/components/ui/button";
-import { Award, Shield, Star, Check, ExternalLink } from "lucide-react"; 
+import { Award, Shield, Star, Check, ExternalLink, ArrowLeft } from "lucide-react"; 
 import DOMPurify from "isomorphic-dompurify";
 export function ProductDetailClient({ product }: { product: ProductDetailItem }) {
   const [activeTab, setActiveTab] = useState<"specs" | "look">("specs");
@@ -56,7 +56,18 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
         </div>
       </div>
       
-      <div className="max-w-7xl mx-auto px-4 relative z-10 flex flex-col lg:flex-row gap-8 xl:gap-16">
+      <div className="max-w-7xl mx-auto px-4 relative z-10">
+        <div className="mb-6">
+          <Link 
+            href="/" 
+            className="inline-flex items-center gap-2 text-brand-black/60 hover:text-brand-bronze transition-colors font-montserrat text-sm font-medium group"
+          >
+            <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+            Vissza a termékekhez
+          </Link>
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-8 xl:gap-16">
         
         {/* Bal Oszlop - 60% */}
         <div className="w-full lg:w-[60%] flex flex-col gap-8">
@@ -363,5 +374,6 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
 
       </div>
     </div>
-  );
+  </div>
+);
 }

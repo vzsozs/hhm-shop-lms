@@ -91,8 +91,8 @@ async function seed() {
       slug: { hu: s("Meinl Planetary Hangvillak"), en: s("Meinl Planetary Tuning Forks"), sk: s("Meinl Planetarne Ladicky") },
     },
     {
-      name: { hu: "Himalájai Hangtálmasszázs(R) Képzések", en: "Himalayan Singing Bowl Massage(R) Courses", sk: "Himalájska Masáž Spievajúcimi Misami(R) Kurzy" },
-      slug: { hu: s("Himalájai Hangtálmasszázs Kepzesek"), en: s("Himalayan Singing Bowl Massage Courses"), sk: s("Himalajska Masaz Kurzy") },
+      name: { hu: "Himalájai Hangtálmasszázs képzések", en: "Himalayan Singing Bowl Massage(R) Courses", sk: "Himalájska Masáž Spievajúcimi Misami(R) Kurzy" },
+      slug: { hu: s("Himalájai Hangtálmasszázs kepzesek"), en: s("Himalayan Singing Bowl Massage Courses"), sk: s("Himalajska Masaz Kurzy") },
     },
   ]).returning();
 
@@ -300,7 +300,7 @@ async function seed() {
     // - Képzés: Kezdő -
     {
       slug: { hu: s("Himalájai Hangtálmasszázs kezdo kepzes"), en: "himalayan-singing-bowl-massage-beginner-course", sk: "himalajska-masaz-misami-zaciatocnicky-kurz" },
-      name: { hu: "Himalájai Hangtálmasszázs(R) - Kezdő Elmélet és Gyakorlat", en: "Himalayan Singing Bowl Massage(R) - Beginner Theory & Practice", sk: "Himalájska Masáž Spievajúcimi Misami(R) - Začiatočnícka Teória a Prax" },
+      name: { hu: "Kezdő tanfolyam - Elmélet és Gyakorlat", en: "Beginner Course - Theory & Practice", sk: "Začiatočnícky kurz - Teória a Prax" },
       brand: "Hangakadémia",
       description: {
         hu: "Képzés időtartama: 3 nap - péntek, szombat, vasárnap 09:00-16:00 h-ig.\nKépzés helye: Hangakadémia(R) 1188 Budapest, Nemes u. 88.\nElőképzettségre nincs szükség.\n\nA képzés tartalmazza:\n- Elméleti és gyakorlati ismeretek\n- Eszközhasználat - egy Meinl Sonic Energy 250g hangtál + ütő a résztvevőé lesz\n- Oktatási segédanyagok, írásos jegyzet\n- Kiváló vizsga után tanúsítvány\n- Konzultáció lehetőség vagy gyakorlónap\n- Részvétel utáni mentorálás\n- Kedvezményes eszközvásárlási lehetőség\n\nA képzés tematikája:\n- Hangtan, akusztikai alapfogalmak\n- Hanggyógyászati terminológia, frekvenciagyógyászat\n- Hangterápia tudományos és biológiai háttere\n- Himalájai hangtálak eredete, történelme, készítésük, tárolásuk, tisztításuk\n- Hangtálas eszközök ismertetése\n- Hangtálak helyes tartása és megszólaltatása, különböző ütők és dörzsfa\n- Különböző ütési és dörzsölési technikák\n- Sound Scan (hangszkennelés), Vízes kezelés\n- Egyéni, csoportos kezelések 1-7 tálig",
@@ -308,9 +308,9 @@ async function seed() {
         sk: "Trvanie: 3 dni - piatok, sobota, nedeľa 09:00-16:00.\nMiesto: Hangakadémia(R) 1188 Budapešť, Nemes u. 88.\nNie je potrebná predchádzajúca príprava.",
       },
       shortDescription: {
-        hu: "3 napos Himalájai Hangtálmasszázs(R) kezdő képzés Budapesten. Tartalmaz: 250g Meinl Sonic Energy hangtál + ütő, tanúsítvány, mentorálás.",
-        en: "3-day Himalayan Singing Bowl Massage(R) beginner course in Budapest. Includes: 250g Meinl Sonic Energy bowl + mallet, certificate, mentoring.",
-        sk: "3-dňový začiatočnícky kurz Himalájska Masáž Spievajúcimi Misami(R) v Budapešti.",
+        hu: "3 napos Himalájai Hangtálmasszázs kezdő képzés Budapesten. Tartalmaz: 250g Meinl Sonic Energy hangtál + ütő, tanúsítvány, mentorálás.",
+        en: "3-day Himalayan Singing Bowl Massage beginner course in Budapest. Includes: 250g Meinl Sonic Energy bowl + mallet, certificate, mentoring.",
+        sk: "3-dňový začiatočnícky kurz Himalájska Masáž Spievajúcimi Misami v Budapešti.",
       },
       longDescription: { hu: "", en: "", sk: "" },
       specifications: [
@@ -326,7 +326,7 @@ async function seed() {
     // - Képzés: Középhaladó -
     {
       slug: { hu: s("Himalájai Hangtálmasszázs kozephalado kepzes"), en: "himalayan-singing-bowl-massage-intermediate-course", sk: "himalajska-masaz-misami-pokrocily-kurz" },
-      name: { hu: "Himalájai Hangtálmasszázs(R) - Középhaladó Elmélet és Gyakorlat", en: "Himalayan Singing Bowl Massage(R) - Intermediate Theory & Practice", sk: "Himalájska Masáž Spievajúcimi Misami(R) - Stredne Pokročilá Teória a Prax" },
+      name: { hu: "Középhaladó tanfolyam - Elmélet és Gyakorlat", en: "Intermediate Course - Theory & Practice", sk: "Stredne Pokročilý kurz - Teória a Prax" },
       brand: "Hangakadémia",
       description: {
         hu: "Képzés időtartama: 3 nap - péntek, szombat, vasárnap 09:00-16:00 h-ig.\nKépzés helye: Hangakadémia(R) 1188 Budapest, Nemes u. 88.\nFeltétel: Himalájai Hangtálmasszázs(R) Kezdő képzés elvégzése.\n\nA képzés tartalmazza:\n- Elméleti és gyakorlati ismeretek\n- Eszközhasználat - egy Meinl Sonic Energy 250g hangtál + dörzsfa a résztvevőé lesz\n- Oktatási segédanyagok, írásos jegyzet\n- Kiváló vizsga után tanúsítvány\n- Konzultáció lehetőség, részvétel utáni mentorálás, kedvezményes eszközvásárlás\n\nA képzés tematikája:\n- Integrált hanggyógyítás, autonóm idegrendszer, nervus vagus\n- Stresszkezelés, érzelmek és hangok kapcsolata\n- Szakrális geometriák a hangterápiában\n- Szívkoherencia és a hangok világa\n- Élő vércseppanalízis\n- Duplex és triplex tálak helyes használata\n- Himalájai testharmonizálás szimbolika alapján (1-13 db hangtállal)\n- 'CSÚSZTATÁSOS TECHNIKA'(R)\n- Gyermek, kismama és párkapcsolati harmonizálás\n- Hangfürdő-vezető hangszerek, meditációs hangfürdők",
@@ -334,14 +334,14 @@ async function seed() {
         sk: "Trvanie: 3 dni - piatok, sobota, nedeľa 09:00-16:00.\nPodmienka: absolvovanie začiatočníckeho kurzu.\nMiesto: Hangakadémia(R) 1188 Budapešť, Nemes u. 88.",
       },
       shortDescription: {
-        hu: "3 napos középhaladó Himalájai Hangtálmasszázs(R) képzés. Feltétel: kezdő szint. Tartalmaz 250g MSE hangtál + dörzsfa, tanúsítvány.",
-        en: "3-day intermediate Himalayan Singing Bowl Massage(R) course. Prerequisite: beginner level. Includes 250g MSE bowl + rubbing stick, certificate.",
+        hu: "3 napos középhaladó Himalájai Hangtálmasszázs képzés. Feltétel: kezdő szint. Tartalmaz 250g MSE hangtál + dörzsfa, tanúsítvány.",
+        en: "3-day intermediate Himalayan Singing Bowl Massage course. Prerequisite: beginner level. Includes 250g MSE bowl + rubbing stick, certificate.",
         sk: "3-dňový stredne pokročilý kurz. Podmienka: začiatočnícka úroveň. Obsahuje misu a trecie drevo.",
       },
       longDescription: { hu: "", en: "", sk: "" },
       specifications: [
         { key_hu: "Időtartam", value_hu: "3 nap (P-Sz-V 09:00-16:00)", key_en: "Duration", value_en: "3 days (Fri-Sun 09:00-16:00)" },
-        { key_hu: "Helyszín", value_hu: "Hangakadémia(R), 1188 Budapest, Nemes u. 88.", key_en: "Venue", value_en: "Hangakadémia(R), 1188 Budapest, Nemes u. 88." },
+        { key_hu: "Helyszín", value_hu: "Hangakadémia, 1188 Budapest, Nemes u. 88.", key_en: "Venue", value_en: "Hangakadémia(R), 1188 Budapest, Nemes u. 88." },
         { key_hu: "Szint", value_hu: "Középhaladó", key_en: "Level", value_en: "Intermediate" },
         { key_hu: "Előképzettség", value_hu: "Kezdő képzés szükséges", key_en: "Prerequisites", value_en: "Beginner course required" },
         { key_hu: "Tartalmaz", value_hu: "250g MSE hangtál + dörzsfa, tanúsítvány", key_en: "Includes", value_en: "250g MSE bowl + rubbing stick, certificate" },

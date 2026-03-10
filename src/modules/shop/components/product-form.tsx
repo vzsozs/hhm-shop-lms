@@ -31,6 +31,12 @@ import { Loader2, Plus, Trash2, ChevronUp, ChevronDown, Image as ImageIcon, Musi
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { productFormStyles as styles } from "./product-form.styles";
+import dynamic from "next/dynamic";
+
+const RichTextEditor = dynamic(() => import("../../admin/components/RichTextEditor"), { 
+  ssr: false,
+  loading: () => <div className="h-[200px] w-full bg-card-bg border border-white/10 rounded-xl animate-pulse" />
+});
 
 interface PendingUpload {
   file: File;
@@ -264,14 +270,18 @@ export function ProductForm({ categories = [], products = [], productGroups = []
                       </FormItem>
                     )}
                   />
-                  <FormField
+                    <FormField
                     control={form.control}
                     name={`longDescription_${lang}` as keyof ProductFormValues}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className={styles.label}>Hosszú leírás ({lang.toUpperCase()})</FormLabel>
                         <FormControl>
-                          <Textarea placeholder={`Részletes termékleírás ${lang}-ul...`} className={`min-h-[150px] ${styles.inputWrapper} ${styles.input}`} {...field} value={field.value as string || ""} />
+                          <RichTextEditor 
+                            value={field.value as string || ""} 
+                            onChange={field.onChange} 
+                            placeholder={`Részletes termékleírás ${lang}-ul...`}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

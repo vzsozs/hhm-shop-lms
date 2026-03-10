@@ -4,8 +4,8 @@ import { useState } from "react";
 import Image from "next/image";
 import { ProductDetailItem } from "@/modules/shop/queries";
 import { Button } from "@/components/ui/button";
-import { Award, Shield, Star, Check } from "lucide-react"; 
-
+import { Award, Shield, Star, Check, ExternalLink } from "lucide-react"; 
+import DOMPurify from "isomorphic-dompurify";
 export function ProductDetailClient({ product }: { product: ProductDetailItem }) {
   const [activeTab, setActiveTab] = useState<"specs" | "look">("specs");
   const [activeImageId, setActiveImageId] = useState(product.media[0]?.id);
@@ -17,6 +17,35 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
   const priceHuf = activeVariant?.priceHuf ? new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF' }).format(activeVariant.priceHuf) : null;
   const priceEur = activeVariant?.priceEur ? new Intl.NumberFormat('sk-SK', { style: 'currency', currency: 'EUR' }).format(activeVariant.priceEur) : null;
 
+  // Segédfüggvény [szöveg](url) parsolásához
+  const renderValueWithLinks = (text: string) => {
+    const parts = text.split(/(\[[^\]]+\]\([^)]+\))/g);
+    return parts.map((part, i) => {
+      const match = part.match(/\[([^\]]+)\]\(([^)]+)\)/);
+      if (match) {
+        return (
+          <a 
+            key={i} 
+            href={match[2]} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-brand-bronze hover:text-brand-brown underline inline-flex items-center gap-1 transition-colors"
+          >
+            {match[1]}
+            <ExternalLink size={12} className="shrink-0" />
+          </a>
+        );
+      }
+      return part;
+    });
+  };
+
+  const sanitizedLongDescription = product.longDescription?.hu 
+    ? DOMPurify.sanitize(product.longDescription.hu, { 
+        ADD_ATTR: ["target", "rel"],
+        FORBID_TAGS: ["script", "style", "iframe"],
+      }) 
+    : null;
   return (
     <div className="relative min-h-screen bg-brand-lightbg pt-12 pb-24">
       {/* Background Mandala Container - Fixes sticky overflow issue */}
@@ -73,9 +102,9 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
           {/* Long Description */}
           <div className="bg-white/60 backdrop-blur-md rounded-2xl p-6 lg:p-10 border border-brand-bronze/20 shadow-sm mt-4">
             <h2 className="text-3xl font-cormorant font-bold text-brand-brown mb-6 uppercase tracking-widest">Részletes leírás</h2>
-            <div className="prose prose-brand max-w-none font-montserrat text-brand-black/80 leading-loose">
-              {product.longDescription && product.longDescription["hu"] ? (
-                 <div dangerouslySetInnerHTML={{ __html: product.longDescription["hu"] }} />
+            <div className="prose prose-stone max-w-none font-montserrat text-brand-black/80 leading-loose">
+              {sanitizedLongDescription ? (
+                 <div dangerouslySetInnerHTML={{ __html: sanitizedLongDescription }} />
               ) : (
                 <p className="italic">Nincs elérhető leírás ehhez a termékhez.</p>
               )}
@@ -112,7 +141,9 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
                              <div className="w-6 h-6 rounded-full bg-brand-bronze/20 flex items-center justify-center shrink-0">
                                <Check className="w-3.5 h-3.5 text-brand-brown" />
                              </div>
-                             <span><strong className="capitalize">{key}:</strong> {val}</span>
+                             <div className="flex-1">
+                              <strong>{key}:</strong> {renderValueWithLinks(val)}
+                            </div>
                            </li>
                          );
                        })}
@@ -217,7 +248,7 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
                        <div key={i} className="flex gap-2 items-center">
                          <Award className="w-3.5 h-3.5 text-brand-black/60 shrink-0" />
                          <span className="capitalize text-brand-black/60">{key}:</span>
-                         <span className="font-bold">{val}</span>
+                         <span className="font-bold">{renderValueWithLinks(val)}</span>
                        </div>
                      );
                    })}

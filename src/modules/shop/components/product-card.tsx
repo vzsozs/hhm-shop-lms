@@ -57,7 +57,7 @@ export function ProductCard({ product, lang }: { product: ProductListItem; lang:
         </div>
         
         <Link href={`/products/${product.slug[lang] || product.slug["hu"]}`} className="hover:underline decoration-brand-bronze/50 underline-offset-4">
-          <h3 className="font-bold text-xl lg:text-2xl line-clamp-2 leading-tight mb-1 font-cormorant text-brand-brown tracking-normal">
+          <h3 className="font-bold text-xl lg:text-2xl line-clamp-2 leading-tight mb-1 font-cormorant text-brand-brown tracking-tight">
             {name}
           </h3>
         </Link>

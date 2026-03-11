@@ -57,6 +57,20 @@
       "when": 1773030554827,
       "tag": "0007_add_product_groups_table",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1773235323896,
+      "tag": "0008_add_meinl_to_product_type",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1773239603273,
+      "tag": "0009_add_sync_logs_table",
+      "breakpoints": true
     }
   ]
 }

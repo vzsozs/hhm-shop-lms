@@ -10,6 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { PackagePlus, ArrowUpDown, Image as ImageIcon } from "lucide-react";
 import { ProductActions } from "./product-actions";
+import { MeinlSyncButton } from "./meinl-sync-button";
 
 import { db } from "@/db";
 import { products, productVariants, productMedia, productCategories, categories } from "@/db/schema/shop";
@@ -81,10 +82,13 @@ export default async function AdminProductsPage({ searchParams }: { searchParams
           <h1 className="text-2xl font-bold text-white">Termékek</h1>
           <p className="text-sm text-white/50 mt-1">Az összes elérhető fizikai és digitális termék kezelése</p>
         </div>
-        <Link href="/admin/products/new" className="px-4 h-10 bg-brand-orange hover:bg-brand-orange/90 rounded-xl flex items-center justify-center gap-2 text-white font-medium transition-colors shadow-lg shadow-brand-orange/20">
-          <PackagePlus size={18} />
-          Új termék felvitele
-        </Link>
+        <div className="flex items-center gap-3">
+          <MeinlSyncButton />
+          <Link href="/admin/products/new" className="px-4 h-10 bg-brand-orange hover:bg-brand-orange/90 rounded-xl flex items-center justify-center gap-2 text-white font-medium transition-colors shadow-lg shadow-brand-orange/20">
+            <PackagePlus size={18} />
+            Új termék felvitele
+          </Link>
+        </div>
       </div>
 
       <div className="bg-card-bg border border-white/5 rounded-2xl overflow-hidden block">

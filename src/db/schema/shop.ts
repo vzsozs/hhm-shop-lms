@@ -2,7 +2,7 @@ import { pgTable, uuid, varchar, timestamp, integer, decimal, jsonb, pgEnum, Any
 import { users } from "./auth";
 
 // Enumok a terméktípusokhoz, mediákhoz és rendelés státuszokhoz
-export const productTypeEnum = pgEnum("product_type", ["physical", "digital"]);
+export const productTypeEnum = pgEnum("product_type", ["physical", "digital", "meinl"]);
 export const productStatusEnum = pgEnum("product_status", ["ACTIVE", "INACTIVE"]);
 export const mediaTypeEnum = pgEnum("media_type", ["IMAGE", "YOUTUBE", "AUDIO"]);
 export const orderStatusEnum = pgEnum("order_status", ["pending", "paid", "shipped", "completed", "cancelled"]);
@@ -115,4 +115,17 @@ export const categories = pgTable("categories", {
 export const productCategories = pgTable("product_categories", {
   productId: uuid("product_id").references(() => products.id, { onDelete: 'cascade' }).notNull(),
   categoryId: uuid("category_id").references(() => categories.id, { onDelete: 'cascade' }).notNull(),
+});
+
+export const syncLogs = pgTable("sync_logs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  syncType: varchar("sync_type", { length: 50 }).notNull(), // e.g., 'meinl'
+  processedCount: integer("processed_count").default(0).notNull(),
+  updatedCount: integer("updated_count").default(0).notNull(),
+  insertedCount: integer("inserted_count").default(0).notNull(),
+  deactivatedCount: integer("deactivated_count").default(0).notNull(),
+  successSkus: jsonb("success_skus"), // Array of SKUs
+  errorSkus: jsonb("error_skus"), // Array of { sku, error }
+  skippedSkus: jsonb("skipped_skus"), // Array of SKUs
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });

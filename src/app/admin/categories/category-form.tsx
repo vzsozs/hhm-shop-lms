@@ -118,9 +118,9 @@ export function CategoryForm({ initialData, categories, onSuccess, onCancel }: C
           </div>
           <Tabs defaultValue="hu" className="w-full">
             <TabsList className="grid w-full grid-cols-3 bg-black/40 border border-white/5 rounded-lg mb-4">
-              <TabsTrigger value="hu">Magyar (HU)</TabsTrigger>
-              <TabsTrigger value="en">English (EN)</TabsTrigger>
-              <TabsTrigger value="sk">Slovenský (SK)</TabsTrigger>
+              <TabsTrigger value="hu" className="text-white/60 hover:text-brand-orange data-[state=active]:text-black">Magyar (HU)</TabsTrigger>
+              <TabsTrigger value="en" className="text-white/60 hover:text-brand-orange data-[state=active]:text-black">English (EN)</TabsTrigger>
+              <TabsTrigger value="sk" className="text-white/60 hover:text-brand-orange data-[state=active]:text-black">Slovenský (SK)</TabsTrigger>
             </TabsList>
             
             {/* HU Tab */}

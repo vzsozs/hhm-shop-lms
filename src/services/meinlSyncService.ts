@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { products, productVariants, productMedia, productCategories, categories, syncLogs } from "@/db/schema/shop";
+import { products, productVariants, productMedia, productCategories, productAttachments, categories, syncLogs } from "@/db/schema/shop";
 import { eq, sql, and, inArray } from "drizzle-orm";
 import * as XLSX from "xlsx";
 import DOMPurify from "isomorphic-dompurify";
@@ -7,18 +7,20 @@ import { MEINL_SYNC_CONFIG } from "@/config/meinl-sync";
 
 const SPEC_MAPPING: Record<string, { en: string; hu: string }> = {
   "Material": { en: "Material", hu: "Anyag" },
-  "Weight": { en: "Weight", hu: "Súly" },
-  "Width": { en: "Width", hu: "Szélesség" },
-  "Height": { en: "Height", hu: "Magasság" },
-  "Depth": { en: "Depth", hu: "Mélység" },
+  "Brand": { en: "Brand", hu: "Márka" },
   "Color": { en: "Color", hu: "Szín" },
   "Size": { en: "Size", hu: "Méret" },
   "Chakra": { en: "Chakra", hu: "Csakra" },
-  "Anyag": { en: "Material", hu: "Anyag" },
   "Tuning": { en: "Tuning", hu: "Hangolás" },
   "Diameter": { en: "Diameter", hu: "Átmérő" },
   "Strings": { en: "Strings", hu: "Húrok száma" },
   "Origin": { en: "Origin", hu: "Származás" },
+  "Country of Origin": { en: "Country of Origin", hu: "Származási hely" },
+  "Length": { en: "Length", hu: "Hosszúság" },
+  "Finish": { en: "Finish", hu: "Kivitel" },
+  "Inclusive": { en: "Inclusive", hu: "Tartalmaz" },
+  "Made in": { en: "Made in", hu: "Származási hely" },
+  "Note/Tuning": { en: "Note/Tuning", hu: "Megjegyzés/Hangolás" },
 };
 
 const SPEC_EXCLUDE = [
@@ -26,16 +28,53 @@ const SPEC_EXCLUDE = [
   "Product Name",
   "Product Description",
   "MSRP",
+  "MSRP without VAT",
+  "MSRP (gross)",
   "Purchase price",
-  "Weight",
-  "Width",
-  "Height",
-  "Depth",
+  "Purchase price (net)",
+  "Currency",
   "Stock",
-  "Media URL",
   "Available",
   "Category",
   "Group",
+  "Go Live Date",
+  "Barcode",
+  "Barcode Type",
+  "HS Code",
+  "Language",
+  "Shipping Volume cbm",
+  "Mastercarton Quantity",
+  "Mastercarton Gross-Weight Kg",
+  "Mastercarton Net-Weight Kg",
+  "Mastercarton Volume cbm",
+  "Mastercarton length cm",
+  "Mastercarton width cm",
+  "Mastercarton height cm",
+  "Small Mastercarton Quantity",
+  "Shipping Gross-Weight (per pc.) Kg",
+  "Shipping Dimensions length cm",
+  "Shipping Dimensions width cm",
+  "Shipping Dimensions height cm",
+  "Product Net-Weight Kg",
+  "Product Dimensions length cm",
+  "Product Dimensions width cm",
+  "Product Dimensions height cm",
+  "Image Thumbnail URL",
+  "Image Main URL", // Ez maradhat a specben a kerni szerint
+  "Image Detail URL",
+  ...Array.from({ length: 19 }, (_, i) => `Image Detail URL${i + 2}`),
+  "Video URL",
+  "Video URL 1", "Video URL 2", "Video URL 3", "Video URL 4", "Video URL 5",
+  "Video URL1", "Video URL2", "Video URL3", "Video URL4", "Video URL5",
+  "Audio URL",
+  "Document URL 1", "Document URL 2", "Document URL 3", "Document URL 4", "Document URL 5",
+  "Document URL1", "Document URL2", "Document URL3", "Document URL4", "Document URL5",
+  "Document URL",
+  "Youtube Link 1", "Youtube Link 2", "Youtube Link 3",
+  "Youtube Link1", "Youtube Link2", "Youtube Link3",
+  "Youtube ID 1", "Youtube Embed Code 1", "Youtube ID 2", "Youtube Embed Code 2", "Youtube ID 3", "Youtube Embed Code 3",
+  "Product group", "Product group2", "Product group3", "Product group4", "Product group5",
+  "Media Folder", "Specs (all)", "Media URL",
   "USP 1", "USP 2", "USP 3", "USP 4", "USP 5", "USP 6", "USP 7", "USP 8", "USP 9", "USP 10",
   "USP1", "USP2", "USP3", "USP4", "USP5", "USP6", "USP7", "USP8", "USP9", "USP10",
   "Feature 1", "Feature 2", "Feature 3", "Feature 4", "Feature 5", "Feature 6", "Feature 7", "Feature 8", "Feature 9", "Feature 10",
@@ -57,7 +96,11 @@ function generateSlug(text: string): string {
 function parseMeinlFloat(value: unknown): number {
   if (value === null || value === undefined || value === "") return 0;
   if (typeof value === "number") return value;
-  const str = String(value).trim().replace(",", ".");
+  // Megszabadulunk a szóközöktől (ezres elválasztó) és a tizedesvesszőt pontra cseréljük
+  // Fontos: a .toString() helyett String() a null/undefined miatt, de itt már szűrtük
+  const str = String(value).trim()
+    .replace(/\s/g, "") // Összes szóköz/whitespace eltávolítása (ezres elválasztó)
+    .replace(",", "."); // Tizedesvessző tizedespontra cserélése
   const num = parseFloat(str);
   return isNaN(num) ? 0 : num;
 }
@@ -91,10 +134,13 @@ export type SyncResult = {
 
 export async function syncMeinlData(fileBuffer: Buffer): Promise<SyncResult> {
   // UTF-8-SIG kezelése: az XLSX.read buffer-ből általában jól kezeli a BOM-ot.
-  const workbook = XLSX.read(fileBuffer, { type: "buffer", codepage: 65001 });
+  // UTF-8-SIG kezelése. A raw: true megakadályozza, hogy az XLSX automatikusan 
+  // számként próbálja parszolni a mezőket, így a tizedesvessző megmarad stringként.
+  const workbook = XLSX.read(fileBuffer, { type: "buffer", codepage: 65001, raw: true });
   const sheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[sheetName];
-  const data = XLSX.utils.sheet_to_json(worksheet) as Record<string, unknown>[];
+  // raw: true kell, hogy ne próbálja meg kitalálni a típusokat (pl. ne vegye ki a tizedesvesszőt)
+  const data = XLSX.utils.sheet_to_json(worksheet, { raw: true }) as Record<string, unknown>[];
 
   const result: SyncResult = {
     processed: 0,
@@ -113,11 +159,12 @@ export async function syncMeinlData(fileBuffer: Buffer): Promise<SyncResult> {
   const allCategories = await db.select().from(categories);
   
   // 2. Eddigi Meinl termékek SKUi (deaktiváláshoz)
+  // Mostantól a brand = 'Meinl' alapján azonosítjuk őket, mert a type = 'physical' lesz
   const existingMeinlProducts = await db
     .select({ sku: productVariants.sku, productId: products.id })
     .from(products)
     .innerJoin(productVariants, eq(products.id, productVariants.productId))
-    .where(eq(products.type, MEINL_SYNC_CONFIG.PRODUCT_TYPE));
+    .where(eq(products.brand, "Meinl"));
   
   const processedSkus = new Set<string>();
 
@@ -170,11 +217,15 @@ export async function syncMeinlData(fileBuffer: Buffer): Promise<SyncResult> {
       shortDescHtml += "</ul>";
       if (shortDescHtml === "<ul></ul>") shortDescHtml = "";
 
-      // Ár számítás
-      const msrp = parseMeinlFloat(row["MSRP"]);
-      const purchasePrice = parseMeinlFloat(row["Purchase price"]);
-      const priceEur = msrp > 0 ? msrp : purchasePrice;
-      const priceHuf = Math.round(priceEur * MEINL_SYNC_CONFIG.EXCHANGE_RATE);
+      // Ár számítás - MSRP without VAT és Purchase price (net) HUF-ban érkeznek!
+      const priceHuf = Math.round(parseMeinlFloat(row["MSRP without VAT"]));
+      const priceEur = priceHuf / MEINL_SYNC_CONFIG.EXCHANGE_RATE;
+
+      // Súly és méretek átváltása (Kg -> g, cm -> mm)
+      const weightG = Math.round(parseMeinlFloat(row["Product Net-Weight Kg"]) * 1000);
+      const lengthMm = Math.round(parseMeinlFloat(row["Product Dimensions length cm"]) * 10);
+      const widthMm = Math.round(parseMeinlFloat(row["Product Dimensions width cm"]) * 10);
+      const heightMm = Math.round(parseMeinlFloat(row["Product Dimensions height cm"]) * 10);
 
       // Specifikációk gyűjtése dinamikusan
       const specifications: { key_en: string; key_hu: string; value_en: string; value_hu: string; key_sk: string; value_sk: string }[] = [];
@@ -239,12 +290,12 @@ export async function syncMeinlData(fileBuffer: Buffer): Promise<SyncResult> {
           // UPDATE Variant
           await tx.update(productVariants).set({
             priceHuf: priceHuf,
-            priceEur: priceEur.toString(),
+            priceEur: priceEur.toFixed(2),
             stock: Math.round(parseMeinlFloat(row["Stock"] || row["Available"] || "0")),
-            weight: row["Weight"] ? String(parseMeinlFloat(row["Weight"])) : null,
-            width: row["Width"] ? String(parseMeinlFloat(row["Width"])) : null,
-            height: row["Height"] ? String(parseMeinlFloat(row["Height"])) : null,
-            depth: row["Depth"] ? String(parseMeinlFloat(row["Depth"])) : null,
+            weight: weightG > 0 ? String(weightG) : null,
+            width: widthMm > 0 ? String(widthMm) : null,
+            height: heightMm > 0 ? String(heightMm) : null,
+            depth: lengthMm > 0 ? String(lengthMm) : null,
           }).where(eq(productVariants.id, existingVariant.id));
 
           result.updated++;
@@ -255,7 +306,8 @@ export async function syncMeinlData(fileBuffer: Buffer): Promise<SyncResult> {
           const slugEn = await ensureUniqueSlug(baseSlug, "en");
 
           const [newProduct] = await tx.insert(products).values({
-            type: MEINL_SYNC_CONFIG.PRODUCT_TYPE,
+            type: "physical", // Mindig fizikai termék
+            brand: "Meinl",
             name: { en: nameEn, hu: nameEn }, // Kezdetben HU is legyen EN ha új
             slug: { hu: slugHu, en: slugEn },
             longDescription: { en: descEn },
@@ -270,61 +322,144 @@ export async function syncMeinlData(fileBuffer: Buffer): Promise<SyncResult> {
             productId: productId,
             sku: sku,
             priceHuf: priceHuf,
-            priceEur: priceEur.toString(),
+            priceEur: priceEur.toFixed(2),
             stock: Math.round(parseMeinlFloat(row["Stock"] || row["Available"] || "0")),
-            weight: row["Weight"] ? String(parseMeinlFloat(row["Weight"])) : null,
-            width: row["Width"] ? String(parseMeinlFloat(row["Width"])) : null,
-            height: row["Height"] ? String(parseMeinlFloat(row["Height"])) : null,
-            depth: row["Depth"] ? String(parseMeinlFloat(row["Depth"])) : null,
+            weight: weightG > 0 ? String(weightG) : null,
+            width: widthMm > 0 ? String(widthMm) : null,
+            height: heightMm > 0 ? String(heightMm) : null,
+            depth: lengthMm > 0 ? String(lengthMm) : null,
           });
 
           result.inserted++;
         }
 
         // 4. Média szinkronizálás (Deduplikáció)
-        const mediaUrlsRaw = String(row["Media URL"] || "");
-        // Több URL esetén elválasztó lehet vessző vagy pontosvessző
-        const mediaUrls = mediaUrlsRaw.split(/[;,]/).map(u => u.trim()).filter(u => u.startsWith("http"));
+        const mediaUrls: { url: string; type: "IMAGE" | "YOUTUBE" | "AUDIO" }[] = [];
+        
+        // Összes lehetséges képmező összegyűjtése
+        const imageKeys = ["Image Thumbnail URL", "Image Detail URL", ...Array.from({ length: 19 }, (_, i) => `Image Detail URL${i + 2}`)];
+        imageKeys.forEach(key => {
+          const url = String(row[key] || "").trim();
+          if (url.startsWith("http")) mediaUrls.push({ url, type: "IMAGE" as const });
+        });
 
-        for (let i = 0; i < mediaUrls.length; i++) {
-          const url = mediaUrls[i];
+        // Audio gyűjtése
+        const audioUrl = String(row["Audio URL"] || "").trim();
+        if (audioUrl.startsWith("http")) mediaUrls.push({ url: audioUrl, type: "AUDIO" as const });
+
+        // Youtube gyűjtése
+        const ytKeys = ["Youtube Link 1", "Youtube Link 2", "Youtube Link 3", "Youtube Link1", "Youtube Link2", "Youtube Link3"];
+        ytKeys.forEach(key => {
+          const url = String(row[key] || "").trim();
+          if (url.startsWith("http")) mediaUrls.push({ url, type: "YOUTUBE" as const });
+        });
+
+        // Video URL gyűjtése (ha Youtube, akkor YOUTUBE, egyébként IMAGE/VIDEO fallback)
+        const videoKeys = ["Video URL 1", "Video URL 2", "Video URL 3", "Video URL 4", "Video URL 5", "Video URL1", "Video URL2", "Video URL3", "Video URL4", "Video URL5"];
+        videoKeys.forEach(key => {
+          const url = String(row[key] || "").trim();
+          if (url.startsWith("http")) {
+            const isYT = url.includes("youtube.com") || url.includes("youtu.be");
+            mediaUrls.push({ url, type: isYT ? ("YOUTUBE" as const) : ("IMAGE" as const) });
+          }
+        });
+
+        // Régi "Media URL" mező splitelése (ha még létezne)
+        const legacyMedia = String(row["Media URL"] || "").split(/[;,]/).map(u => u.trim()).filter(u => u.startsWith("http"));
+        legacyMedia.forEach(url => mediaUrls.push({ url, type: "IMAGE" as const }));
+
+        // Egyedi média elemek (URL alapján deduplikálva, típust megőrizve)
+        const uniqueMedia = Array.from(new Map(mediaUrls.map(m => [m.url, m])).values());
+
+        for (let i = 0; i < uniqueMedia.length; i++) {
+          const media = uniqueMedia[i];
           const [exists] = await tx
             .select()
             .from(productMedia)
-            .where(and(eq(productMedia.productId, productId), eq(productMedia.url, url)))
+            .where(and(eq(productMedia.productId, productId), eq(productMedia.url, media.url)))
             .limit(1);
 
           if (!exists) {
             await tx.insert(productMedia).values({
               productId: productId,
-              url: url,
-              type: "IMAGE", // Feltételezzük hogy kép
+              url: media.url,
+              type: media.type,
               order: i,
             });
           }
         }
 
-        // 5. Kategória auto-matching (Név alapján)
-        const categoryMatch = String(row["Category"] || row["Group"] || "").trim();
-        if (categoryMatch) {
-          const matchedCat = allCategories.find(c => {
+        // 5. Dokumentumok (Attachments) szinkronizálása
+        const docKeys = ["Document URL 1", "Document URL 2", "Document URL 3", "Document URL 4", "Document URL 5", "Document URL1", "Document URL2", "Document URL3", "Document URL4", "Document URL5"];
+        const docUrls: string[] = [];
+        docKeys.forEach(key => {
+          const url = String(row[key] || "").trim();
+          if (url.startsWith("http")) docUrls.push(url);
+        });
+
+        for (const url of [...new Set(docUrls)]) {
+          const [exists] = await tx.select().from(productAttachments).where(and(eq(productAttachments.productId, productId), eq(productAttachments.url, url))).limit(1);
+          if (!exists) {
+            // Név kinyerése az URL-ből vagy header-ből
+            const filename = url.split('/').pop() || "Dokumentum";
+            await tx.insert(productAttachments).values({
+              productId: productId,
+              url: url,
+              name: filename,
+            });
+          }
+        }
+
+        // 6. Hierarchikus kategória-kezelés (Product group -> Product group5)
+        const categoryGroupKeys = ["Product group", "Product group2", "Product group3", "Product group4", "Product group5"];
+        let lastParentId: string | null = null;
+        const linkedCategoryIds: string[] = [];
+
+        for (const key of categoryGroupKeys) {
+          const catName = String(row[key] || "").trim();
+          if (!catName) break; // Ha üres, megállunk a hierarchiában
+
+          // Keressük meg vagy hozzuk létre a kategóriát ezen a szinten
+          // Frissítjük a lokális listát is tranzakción belül ha szükséges
+          let matchedCat = allCategories.find(c => {
             const names = (c.name || {}) as Record<string, string>;
-            return Object.values(names).some(n => n.toLowerCase() === categoryMatch.toLowerCase());
+            return (names.hu === catName || names.en === catName) && (c.parentId === lastParentId);
           });
 
+          if (!matchedCat) {
+            const baseSlug = generateSlug(catName);
+            const slugHu = await ensureUniqueSlug(baseSlug, "hu");
+            const slugEn = await ensureUniqueSlug(baseSlug, "en");
+
+            const [newCat] = (await tx.insert(categories).values({
+              name: { hu: catName, en: catName, sk: "" },
+              slug: { hu: slugHu, en: slugEn, sk: "" },
+              parentId: lastParentId,
+            }).returning()) as (typeof categories.$inferSelect)[];
+
+            matchedCat = newCat;
+            allCategories.push(newCat); // Hozzáadjuk a lokális listához a köv. sorokhoz
+          }
+
           if (matchedCat) {
-            const [relExists] = await tx
-              .select()
-              .from(productCategories)
-              .where(and(eq(productCategories.productId, productId), eq(productCategories.categoryId, matchedCat.id)))
-              .limit(1);
-            
-            if (!relExists) {
-              await tx.insert(productCategories).values({
-                productId: productId,
-                categoryId: matchedCat.id,
-              });
-            }
+            lastParentId = matchedCat.id;
+            linkedCategoryIds.push(matchedCat.id);
+          }
+        }
+
+        // Összekötés a termékkel (minden szinten)
+        for (const catId of linkedCategoryIds) {
+          const [relExists] = await tx
+            .select()
+            .from(productCategories)
+            .where(and(eq(productCategories.productId, productId), eq(productCategories.categoryId, catId)))
+            .limit(1);
+          
+          if (!relExists) {
+            await tx.insert(productCategories).values({
+              productId: productId,
+              categoryId: catId,
+            });
           }
         }
         

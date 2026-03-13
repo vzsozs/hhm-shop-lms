@@ -45,19 +45,19 @@ export function ProductCard({ product, lang }: { product: ProductListItem; lang:
   return (
     <Card className="flex flex-col h-full overflow-hidden group hover:shadow-lg transition-all border-brand-bronze/20 bg-white/70 backdrop-blur-sm shadow-sm rounded-2xl p-0 gap-0">
       {/* Borítókép Container - Kifutó */}
-      <div className="relative aspect-video sm:aspect-square w-full bg-[#f3ede8] overflow-hidden shrink-0 group/img">
+      <div className="relative aspect-square w-full bg-[#f3ede8] overflow-hidden shrink-0 group/img p-4 md:p-0">
         {product.mainImageUrl ? (
           <Link href={`/products/${product.slug[lang] || product.slug["hu"]}`} className="block w-full h-full relative cursor-pointer">
             <Image
               src={product.mainImageUrl}
               alt={name}
               fill
-              className="object-cover transition-transform"
+              className="object-contain md:object-cover transition-transform"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
             
-            {/* Hover Overlay - Dinamikus specifikációk */}
-            <div className="absolute inset-x-0 bottom-0 bg-white/95 backdrop-blur-sm p-4 transition-transform duration-300 translate-y-full group-hover/img:translate-y-0 border-t border-brand-bronze/10">
+            {/* Hover Overlay - Dinamikus specifikációk (Csak asztali nézetben) */}
+            <div className="absolute inset-x-0 bottom-0 bg-white/95 backdrop-blur-sm p-4 transition-transform duration-300 translate-y-full group-hover/img:translate-y-0 border-t border-brand-bronze/10 hidden md:block">
               <p className="text-[10px] font-bold tracking-widest uppercase text-brand-bronze mb-2">{t.features}</p>
               <ul className="space-y-1">
                 {Array.isArray(product.specifications) && product.specifications.length > 0 ? (
@@ -95,7 +95,7 @@ export function ProductCard({ product, lang }: { product: ProductListItem; lang:
         )}
         
         {/* Badge-ek (Dinamikus) */}
-        <div className="absolute top-3 right-3 flex flex-row gap-2 z-20">
+        <div className="absolute top-7 right-7 md:top-3 md:right-3 flex flex-row gap-2 z-20">
           {product.badges && product.badges.length > 0 && (
             product.badges.map((badge, idx) => (
               <div 
@@ -140,6 +140,26 @@ export function ProductCard({ product, lang }: { product: ProductListItem; lang:
             {name}
           </h3>
         </Link>
+
+        {/* Specifikációk (Mobilnézetben a név alatt) */}
+        <div className="md:hidden mt-3">
+          <ul className="space-y-1.5">
+            {Array.isArray(product.specifications) && product.specifications.length > 0 ? (
+                (product.specifications as Array<Record<string, string>>).slice(0, 3).map((spec, i) => {
+                  const key = spec[`key_${lang}`] || spec.key_hu || spec.key_en;
+                  const value = spec[`value_${lang}`] || spec.value_hu || spec.value_en;
+                  return (
+                    <li key={i} className="flex items-start gap-2 text-[10px] sm:text-[11px] leading-tight text-brand-black/70 font-montserrat">
+                      <div className="w-1 h-1 rounded-full bg-brand-bronze/60 mt-1 shrink-0" />
+                      <span className="line-clamp-1">
+                        <strong className="text-brand-brown/80">{key}:</strong> {value}
+                      </span>
+                    </li>
+                  );
+                })
+            ) : null}
+          </ul>
+        </div>
         
       </CardContent>
 

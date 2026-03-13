@@ -7,5 +7,9 @@ import * as schema from "./schema";
 const connectionString = process.env.DATABASE_URL || "postgres://dummy:dummy@localhost:5432/dummy";
 
 // Megakadályozzuk a többszörös kapcsolatot fejlesztés közben
-const client = postgres(connectionString);
+const globalForDb = global as unknown as { client: postgres.Sql | undefined };
+
+const client = globalForDb.client ?? postgres(connectionString);
+if (process.env.NODE_ENV !== "production") globalForDb.client = client;
+
 export const db = drizzle(client, { schema });

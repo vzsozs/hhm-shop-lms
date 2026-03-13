@@ -4,7 +4,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, X } from "lucide-react";
+import { Search, X, Filter, Layers, ArrowUpDown } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -157,54 +157,66 @@ export function ProductFilters({
         )}
       </div>
 
-      {/* Badge választó (Típus helyett) */}
-      <div className="w-full md:w-[200px] shrink-0">
-        <Select value={badge} onValueChange={setBadge}>
-          <SelectTrigger className="w-full bg-white/80 border-brand-bronze/30 text-brand-black h-[46px] rounded-xl focus:ring-1 focus:ring-brand-bronze/50 [&>span]:truncate [&>span]:block [&>span]:text-left overflow-hidden items-center justify-between">
-            <SelectValue placeholder={t.badgeAll} />
-          </SelectTrigger>
-          <SelectContent className="bg-white border-brand-bronze/20 rounded-xl shadow-lg text-brand-black">
-            <SelectItem value="all" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">{t.badgeAll}</SelectItem>
-            {badgeSettings.map((bs) => (
-              <SelectItem key={bs.id} value={bs.iconName} className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">
-                {bs.tooltips[lang] || bs.tooltips["hu"] || bs.iconName}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {/* Szűrők csoportja (Mobilon egymás mellett) */}
+      <div className="grid grid-cols-3 gap-2 w-full md:flex md:w-auto md:gap-3 shrink-0">
+        {/* Badge választó (Típus helyett) */}
+        <div className="w-full md:w-[180px] shrink-0">
+          <Select value={badge} onValueChange={setBadge}>
+            <SelectTrigger className="w-full bg-white/80 border-brand-bronze/30 text-brand-black h-[68px] md:h-[46px] rounded-xl focus:ring-1 focus:ring-brand-bronze/50 px-3 py-2 md:px-3 md:py-2 whitespace-normal md:whitespace-nowrap [&_[data-slot=select-value]]:line-clamp-2 md:[&_[data-slot=select-value]]:line-clamp-1 [&_[data-slot=select-value]]:leading-[1.1] md:[&_[data-slot=select-value]]:leading-normal [&_[data-slot=select-value]]:whitespace-normal md:[&_[data-slot=select-value]]:whitespace-nowrap text-[11px] sm:text-[14px]">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Filter className="h-3.5 w-3.5 shrink-0 opacity-60" />
+                <SelectValue placeholder={t.badgeAll} />
+              </div>
+            </SelectTrigger>
+            <SelectContent className="bg-white border-brand-bronze/20 rounded-xl shadow-lg text-brand-black">
+              <SelectItem value="all" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">{t.badgeAll}</SelectItem>
+              {badgeSettings.map((bs) => (
+                <SelectItem key={bs.id} value={bs.iconName} className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">
+                  {bs.tooltips[lang] || bs.tooltips["hu"] || bs.iconName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-      {/* Kategória választó */}
-      <div className="w-full md:w-[190px] shrink-0">
-        <Select value={categoryId} onValueChange={setCategoryId}>
-          <SelectTrigger className="w-full bg-white/80 border-brand-bronze/30 text-brand-black h-[46px] rounded-xl focus:ring-1 focus:ring-brand-bronze/50 [&>span]:truncate [&>span]:block [&>span]:text-left overflow-hidden items-center justify-between">
-            <SelectValue placeholder={t.categoryAll} />
-          </SelectTrigger>
-          <SelectContent className="bg-white border-brand-bronze/20 rounded-xl shadow-lg text-brand-black w-[190px]">
-            <SelectItem value="all" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">{t.categoryAll}</SelectItem>
-            {categories.map((cat) => (
-              <SelectItem key={cat.id} value={cat.id} className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black truncate">
-                {cat.name[lang] || cat.name["hu"] || cat.slug?.[lang] || cat.slug?.["hu"]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+        {/* Kategória választó */}
+        <div className="w-full md:w-[170px] shrink-0">
+          <Select value={categoryId} onValueChange={setCategoryId}>
+            <SelectTrigger className="w-full bg-white/80 border-brand-bronze/30 text-brand-black h-[68px] md:h-[46px] rounded-xl focus:ring-1 focus:ring-brand-bronze/50 px-3 py-2 md:px-3 md:py-2 whitespace-normal md:whitespace-nowrap [&_[data-slot=select-value]]:line-clamp-2 md:[&_[data-slot=select-value]]:line-clamp-1 [&_[data-slot=select-value]]:leading-[1.1] md:[&_[data-slot=select-value]]:leading-normal [&_[data-slot=select-value]]:whitespace-normal md:[&_[data-slot=select-value]]:whitespace-nowrap text-[11px] sm:text-[14px]">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Layers className="h-3.5 w-3.5 shrink-0 opacity-60" />
+                <SelectValue placeholder={t.categoryAll} />
+              </div>
+            </SelectTrigger>
+            <SelectContent className="bg-white border-brand-bronze/20 rounded-xl shadow-lg text-brand-black w-[200px]">
+              <SelectItem value="all" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">{t.categoryAll}</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id} className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black truncate">
+                  {cat.name[lang] || cat.name["hu"] || cat.slug?.[lang] || cat.slug?.["hu"]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-      {/* Rendezés választó */}
-      <div className="w-full md:w-[200px] shrink-0">
-        <Select value={sort} onValueChange={setSort}>
-          <SelectTrigger className="w-full bg-white/80 border-brand-bronze/30 text-brand-black h-[46px] rounded-xl focus:ring-1 focus:ring-brand-bronze/50 [&>span]:truncate [&>span]:block [&>span]:text-left overflow-hidden items-center justify-between">
-            <SelectValue placeholder={t.sortLabel} />
-          </SelectTrigger>
-          <SelectContent className="bg-white border-brand-bronze/20 rounded-xl shadow-lg text-brand-black w-[200px]">
-            <SelectItem value="newest" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">{t.sortNewest}</SelectItem>
-            <SelectItem value="price-asc" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">{t.sortPriceAsc}</SelectItem>
-            <SelectItem value="price-desc" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">{t.sortPriceDesc}</SelectItem>
-            <SelectItem value="name-asc" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">{t.sortNameAsc}</SelectItem>
-            <SelectItem value="name-desc" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">{t.sortNameDesc}</SelectItem>
-          </SelectContent>
-        </Select>
+        {/* Rendezés választó */}
+        <div className="w-full md:w-[170px] shrink-0">
+          <Select value={sort} onValueChange={setSort}>
+            <SelectTrigger className="w-full bg-white/80 border-brand-bronze/30 text-brand-black h-[68px] md:h-[46px] rounded-xl focus:ring-1 focus:ring-brand-bronze/50 px-3 py-2 md:px-3 md:py-2 whitespace-normal md:whitespace-nowrap [&_[data-slot=select-value]]:line-clamp-2 md:[&_[data-slot=select-value]]:line-clamp-1 [&_[data-slot=select-value]]:leading-[1.1] md:[&_[data-slot=select-value]]:leading-normal [&_[data-slot=select-value]]:whitespace-normal md:[&_[data-slot=select-value]]:whitespace-nowrap text-[11px] sm:text-[14px]">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <ArrowUpDown className="h-3.5 w-3.5 shrink-0 opacity-60" />
+                <SelectValue placeholder={t.sortLabel} />
+              </div>
+            </SelectTrigger>
+            <SelectContent className="bg-white border-brand-bronze/20 rounded-xl shadow-lg text-brand-black w-[200px]">
+              <SelectItem value="newest" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">{t.sortNewest}</SelectItem>
+              <SelectItem value="price-asc" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">{t.sortPriceAsc}</SelectItem>
+              <SelectItem value="price-desc" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">{t.sortPriceDesc}</SelectItem>
+              <SelectItem value="name-asc" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">{t.sortNameAsc}</SelectItem>
+              <SelectItem value="name-desc" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">{t.sortNameDesc}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
       
     </div>

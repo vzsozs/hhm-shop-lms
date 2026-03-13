@@ -226,10 +226,10 @@ export function ProductDetailClient({ product, lang }: { product: ProductDetailI
           </Link>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8 xl:gap-16">
+        <div className="grid grid-cols-1 lg:grid-cols-10 gap-8 xl:gap-16">
         
-        {/* Bal Oszlop - 60% */}
-        <div className="w-full lg:w-[60%] flex flex-col gap-8">
+        {/* Bal Felső Oszlop - Galéria (60% desktopon) */}
+        <div className="lg:col-span-6 lg:col-start-1 lg:row-start-1 order-1 flex flex-col gap-8">
           {/* Fő Kép és Galéria */}
           <div className="flex flex-col gap-4">
             <div className="w-full aspect-square bg-[#ffffff] rounded-2xl overflow-hidden relative border border-brand-bronze/10">
@@ -284,110 +284,14 @@ export function ProductDetailClient({ product, lang }: { product: ProductDetailI
               </div>
             )}
           </div>
-
-          {/* Tabs: Specs & Look */}
-          <div className="mt-4">
-            <div className="flex border-b border-brand-bronze/20 mb-6 font-cormorant">
-              <button 
-                onClick={() => setActiveTab("specs")}
-                className={`py-3 px-6 font-bold text-2xl tracking-widest transition-colors border-b-2 uppercase ${activeTab === "specs" ? "border-brand-bronze text-brand-brown" : "border-transparent text-brand-black/50 hover:text-brand-black"}`}
-              >
-                {t.features}
-              </button>
-              <button 
-                onClick={() => setActiveTab("look")}
-                className={`py-3 px-6 font-bold text-2xl tracking-widest transition-colors border-b-2 uppercase ${activeTab === "look" ? "border-brand-bronze text-brand-brown" : "border-transparent text-brand-black/50 hover:text-brand-black"}`}
-              >
-                {t.dimensions}
-              </button>
-            </div>
-            
-            <div className="min-h-[200px] font-montserrat text-brand-black/80 bg-white/40 p-6 rounded-2xl border border-brand-bronze/10 shadow-sm">
-              {activeTab === "specs" && (
-                <div>
-                   {Array.isArray(product.specifications) && product.specifications.length > 0 ? (
-                     <ul className="space-y-4">
-                       {(() => {
-                         const specs = product.specifications as Array<{ key_hu: string; key_en: string; key_sk: string; value_hu: string; value_en: string; value_sk: string }>;
-                         // USP-ket előre, a többit utána
-                         const sortedSpecs = [...specs].sort((a, b) => {
-                           const aIsUsp = a.key_en?.startsWith("USP") || a.key_hu?.startsWith("USP");
-                           const bIsUsp = b.key_en?.startsWith("USP") || b.key_hu?.startsWith("USP");
-                           if (aIsUsp && !bIsUsp) return -1;
-                           if (!aIsUsp && bIsUsp) return 1;
-                           return 0;
-                         });
-
-                         return sortedSpecs.map((spec, i) => {
-                           const isUsp = spec.key_en?.startsWith("USP") || spec.key_hu?.startsWith("USP");
-                           const key = (spec as Record<string, string>)[`key_${lang}`] || spec.key_hu || spec.key_en || `${t.features} ${i + 1}`;
-                           const val = (spec as Record<string, string>)[`value_${lang}`] || spec.value_hu || spec.value_en || "–";
-                           
-                           return (
-                             <li key={i} className="flex gap-3 items-center">
-                               <div className="w-6 h-6 rounded-full bg-brand-bronze/20 flex items-center justify-center shrink-0">
-                                 <Check className="w-3.5 h-3.5 text-brand-brown" />
-                               </div>
-                               <div className="flex-1 text-sm font-medium">
-                                 {!isUsp && <strong className="text-brand-brown">{key}: </strong>}
-                                 {renderValueWithLinks(val)}
-                               </div>
-                             </li>
-                           );
-                         });
-                       })()}
-                     </ul>
-                   ) : (
-                     <p className="italic text-brand-black/50">{t.noSpecs}</p>
-                   )}
-                </div>
-              )}
-              {activeTab === "look" && (
-                <div>
-                   <ul className="space-y-4">
-                      {activeVariant?.weight && (
-                        <li className="flex gap-3 items-center">
-                          <div className="w-6 h-6 rounded-full bg-brand-bronze/20 flex items-center justify-center shrink-0">
-                            <div className="w-2 h-2 rounded-full bg-brand-brown"></div>
-                          </div>
-                          <span><strong>{t.weight}:</strong> {activeVariant.weight} g</span>
-                        </li>
-                      )}
-                      {activeVariant?.width && activeVariant?.height && activeVariant?.depth && (
-                         <li className="flex gap-3 items-center">
-                          <div className="w-6 h-6 rounded-full bg-brand-bronze/20 flex items-center justify-center shrink-0">
-                            <div className="w-2 h-2 rounded-full bg-brand-brown"></div>
-                          </div>
-                          <span><strong>{t.dimensionsLabel}:</strong> {activeVariant.width} x {activeVariant.height} x {activeVariant.depth} cm</span>
-                        </li>
-                      )}
-                      {!activeVariant?.weight && !activeVariant?.width && <p>{t.noDimensions}</p>}
-                   </ul>
-                </div>
-              )}
-            </div>
-
-            {/* Long Description */}
-            <div className="bg-white/60 backdrop-blur-md rounded-2xl p-6 lg:p-10 border border-brand-bronze/20 shadow-sm mt-4">
-              <h2 className="text-3xl font-cormorant font-bold text-brand-brown mb-6 uppercase tracking-widest">{t.detailedDescription}</h2>
-              <div className="prose prose-stone max-w-none font-montserrat text-brand-black/80 leading-loose">
-                {sanitizedLongDescription ? (
-                  <div dangerouslySetInnerHTML={{ __html: sanitizedLongDescription }} />
-                ) : (
-                  <p className="italic">{t.noDescription}</p>
-                )}
-              </div>
-            </div>
-
-          </div>
         </div>
 
-        {/* Jobb Oszlop - 40% - Sticky Card */}
-        <div className="w-full lg:w-[40%] text-brand-black relative z-10 lg:pl-10">
-          <div className="lg:sticky lg:top-32 flex flex-row gap-4 lg:gap-6 font-montserrat">
+        {/* Jobb Oszlop - 40% - Sticky Card (Mobilon a galéria alatt, Desktopon fent jobbra) */}
+        <div className="lg:col-span-4 lg:col-start-7 lg:row-start-1 lg:row-span-2 order-2 lg:order-last w-full text-brand-black relative z-10 lg:pl-10">
+          <div className="lg:sticky lg:top-32 lg:self-start flex flex-row gap-4 lg:gap-6 font-montserrat">
             
-            {/* Dinamikus Badge-ek */}
-            <div className="flex flex-col gap-3 pt-2 shrink-0">
+            {/* Dinamikus Badge-ek (Desktopon az oldalsávban marad) */}
+            <div className="hidden lg:flex flex-col gap-3 pt-2 shrink-0">
               {product.badges && product.badges.length > 0 && (
                 product.badges.map((badge, idx) => (
                   <div 
@@ -434,6 +338,29 @@ export function ProductDetailClient({ product, lang }: { product: ProductDetailI
                     {product.name[lang] || product.name["hu"] || t.unnamedProduct}
                   </h1>
                 </div>
+
+                {/* Badges - Mobilon a név alatt */}
+                <div className="lg:hidden flex flex-row flex-wrap gap-2 mb-6">
+                  {product.badges && product.badges.length > 0 && (
+                    product.badges.map((badge, idx) => (
+                      <div 
+                        key={idx} 
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-brand-bronze/20 bg-white/50 text-[10px] font-bold text-brand-brown uppercase tracking-widest shadow-sm"
+                      >
+                        <div className="relative w-4 h-4 rounded-full overflow-hidden">
+                          <Image
+                            src={`/assets/badges/${badge.icon}`}
+                            alt={badge.icon}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <span>{badge.tooltip?.[lang] || badge.tooltip?.["hu"] || ""}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+
                 <p className="text-brand-black/40 text-[11px] font-bold uppercase tracking-widest mb-4">
                   {t.skuPrefix}: {activeVariant?.sku || "–"}
                 </p>
@@ -661,7 +588,106 @@ export function ProductDetailClient({ product, lang }: { product: ProductDetailI
           </div>
         </div>
 
-      </div>
+        {/* Bal Alsó Oszlop - Specs & Look (Mobilon a legalján, Desktopon galéria alatt) */}
+        <div className="lg:col-span-6 lg:col-start-1 lg:row-start-2 order-3 lg:order-2">
+          {/* Tabs: Specs & Look */}
+          <div className="mt-4">
+            <div className="flex border-b border-brand-bronze/20 mb-6 font-cormorant overflow-x-auto scrollbar-hide">
+              <button 
+                onClick={() => setActiveTab("specs")}
+                className={`py-3 px-6 font-bold text-medium sm:text-2xl tracking-widest transition-colors border-b-2 uppercase whitespace-nowrap ${activeTab === "specs" ? "border-brand-bronze text-brand-brown" : "border-transparent text-brand-black/50 hover:text-brand-black"}`}
+              >
+                {t.features}
+              </button>
+              <button 
+                onClick={() => setActiveTab("look")}
+                className={`py-3 px-6 font-bold text-medium sm:text-2xl tracking-widest transition-colors border-b-2 uppercase whitespace-nowrap ${activeTab === "look" ? "border-brand-bronze text-brand-brown" : "border-transparent text-brand-black/50 hover:text-brand-black"}`}
+              >
+                {t.dimensions}
+              </button>
+            </div>
+            
+            <div className="min-h-[200px] font-montserrat text-brand-black/80 bg-white/40 p-6 rounded-2xl border border-brand-bronze/10 shadow-sm">
+              {activeTab === "specs" && (
+                <div>
+                   {Array.isArray(product.specifications) && product.specifications.length > 0 ? (
+                     <ul className="space-y-4">
+                       {(() => {
+                         const specs = product.specifications as Array<{ key_hu: string; key_en: string; key_sk: string; value_hu: string; value_en: string; value_sk: string }>;
+                         // USP-ket előre, a többit utána
+                         const sortedSpecs = [...specs].sort((a, b) => {
+                           const aIsUsp = a.key_en?.startsWith("USP") || a.key_hu?.startsWith("USP");
+                           const bIsUsp = b.key_en?.startsWith("USP") || b.key_hu?.startsWith("USP");
+                           if (aIsUsp && !bIsUsp) return -1;
+                           if (!aIsUsp && bIsUsp) return 1;
+                           return 0;
+                         });
+
+                         return sortedSpecs.map((spec, i) => {
+                           const isUsp = spec.key_en?.startsWith("USP") || spec.key_hu?.startsWith("USP");
+                           const key = (spec as Record<string, string>)[`key_${lang}`] || spec.key_hu || spec.key_en || `${t.features} ${i + 1}`;
+                           const val = (spec as Record<string, string>)[`value_${lang}`] || spec.value_hu || spec.value_en || "–";
+                           
+                           return (
+                             <li key={i} className="flex gap-3 items-center">
+                               <div className="w-6 h-6 rounded-full bg-brand-bronze/20 flex items-center justify-center shrink-0">
+                                 <Check className="w-3.5 h-3.5 text-brand-brown" />
+                               </div>
+                               <div className="flex-1 text-sm font-medium break-words overflow-hidden">
+                                 {!isUsp && <strong className="text-brand-brown">{key}: </strong>}
+                                 {renderValueWithLinks(val)}
+                               </div>
+                             </li>
+                           );
+                         });
+                       })()}
+                     </ul>
+                   ) : (
+                     <p className="italic text-brand-black/50">{t.noSpecs}</p>
+                   )}
+                </div>
+              )}
+              {activeTab === "look" && (
+                <div>
+                   <ul className="space-y-4">
+                      {activeVariant?.weight && (
+                        <li className="flex gap-3 items-center">
+                          <div className="w-6 h-6 rounded-full bg-brand-bronze/20 flex items-center justify-center shrink-0">
+                            <div className="w-2 h-2 rounded-full bg-brand-brown"></div>
+                          </div>
+                          <span><strong>{t.weight}:</strong> {activeVariant.weight} g</span>
+                        </li>
+                      )}
+                      {activeVariant?.width && activeVariant?.height && activeVariant?.depth && (
+                         <li className="flex gap-3 items-center">
+                          <div className="w-6 h-6 rounded-full bg-brand-bronze/20 flex items-center justify-center shrink-0">
+                            <div className="w-2 h-2 rounded-full bg-brand-brown"></div>
+                          </div>
+                          <span><strong>{t.dimensionsLabel}:</strong> {activeVariant.width} x {activeVariant.height} x {activeVariant.depth} cm</span>
+                        </li>
+                      )}
+                      {!activeVariant?.weight && !activeVariant?.width && <p>{t.noDimensions}</p>}
+                   </ul>
+                </div>
+              )}
+            </div>
+
+            {/* Long Description */}
+            <div className="bg-white/60 backdrop-blur-md rounded-2xl p-6 lg:p-10 border border-brand-bronze/20 shadow-sm mt-4">
+              <h2 className="text-2xl md:text-3xl font-cormorant font-bold text-brand-brown mb-6 uppercase tracking-widest">{t.detailedDescription}</h2>
+              <div className="prose prose-stone max-w-none font-montserrat text-brand-black/80 leading-loose">
+                {sanitizedLongDescription ? (
+                  <div dangerouslySetInnerHTML={{ __html: sanitizedLongDescription }} />
+                ) : (
+                  <p className="italic">{t.noDescription}</p>
+                )}
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        </div>
     </div>
   </div>
 );

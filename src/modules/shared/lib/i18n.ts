@@ -28,6 +28,6 @@ export async function getTranslation(key: string, lang: string = "hu") {
   }
 }
 
-// Támogatott nyelvek listája
-export const SUPPORTED_LANGUAGES = ["hu", "en", "sk"] as const;
-export type Language = (typeof SUPPORTED_LANGUAGES)[number];
+import { SUPPORTED_LANGUAGES, Language } from "./i18n-constants";
+export { SUPPORTED_LANGUAGES };
+export type { Language };

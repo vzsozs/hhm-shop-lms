@@ -8,7 +8,88 @@ import { Button } from "@/components/ui/button";
 import { Award, Shield, Star, Check, ExternalLink, ArrowLeft, Play, Pause, Volume2, VolumeX } from "lucide-react"; 
 import { useRef, useEffect } from "react";
 import DOMPurify from "isomorphic-dompurify";
-export function ProductDetailClient({ product }: { product: ProductDetailItem }) {
+import { Language } from "@/modules/shared/lib/i18n-constants";
+
+export function ProductDetailClient({ product, lang }: { product: ProductDetailItem; lang: Language }) {
+  const dict: Record<Language, Record<string, string>> = {
+    hu: {
+      backToProducts: "Vissza a termékekhez",
+      features: "Jellemzők",
+      dimensions: "Méretek és Súly",
+      noSpecs: "Nincsenek specifikációk rögzítve.",
+      weight: "Súly",
+      dimensionsLabel: "Méretek (Szé x Ma x Mé)",
+      noDimensions: "Nincsenek méretek megadva ehhez a variációhoz.",
+      detailedDescription: "Részletes leírás",
+      noDescription: "Nincs elérhető leírás ehhez a termékhez.",
+      premiumQuality: "Prémium Minőség",
+      original: "Eredeti",
+      featuredOffer: "Kiemelt Ajánlat",
+      productLine: "Termékcsalád",
+      skuPrefix: "Cikkszám",
+      priceNotAvailable: "Ár nem elérhető",
+      addToCart: "Kosárba rakom",
+      listenAudio: "Hangminta hallgatása",
+      otherFamilyMembers: "A család további tagjai",
+      currentProduct: "Jelenlegi",
+      variants: "Méretek / Variációk",
+      noImage: "Nincs kép",
+      item: "termék",
+      variation: "Variáció"
+    },
+    en: {
+      backToProducts: "Back to products",
+      features: "Features",
+      dimensions: "Dimensions and Weight",
+      noSpecs: "No specifications recorded.",
+      weight: "Weight",
+      dimensionsLabel: "Dimensions (W x H x D)",
+      noDimensions: "No dimensions specified for this variant.",
+      detailedDescription: "Detailed description",
+      noDescription: "No description available for this product.",
+      premiumQuality: "Premium Quality",
+      original: "Original",
+      featuredOffer: "Featured Offer",
+      productLine: "Product Line",
+      skuPrefix: "SKU",
+      priceNotAvailable: "Price not available",
+      addToCart: "Add to cart",
+      listenAudio: "Listen to sample",
+      otherFamilyMembers: "Other members of the family",
+      currentProduct: "Current",
+      variants: "Sizes / Variations",
+      noImage: "No image",
+      item: "item",
+      variation: "Variation"
+    },
+    sk: {
+      backToProducts: "Späť na produkty",
+      features: "Vlastnosti",
+      dimensions: "Rozmery a hmotnosť",
+      noSpecs: "Žiadne špecifikácie nie sú zaznamenané.",
+      weight: "Hmotnosť",
+      dimensionsLabel: "Rozmery (Š x V x H)",
+      noDimensions: "Pre tento variant nie sú zadané žiadne rozmery.",
+      detailedDescription: "Podrobný popis",
+      noDescription: "Pre tento produkt nie je k dispozícii žiadny popis.",
+      premiumQuality: "Prémiová kvalita",
+      original: "Originál",
+      featuredOffer: "Špeciálna ponuka",
+      productLine: "Produktový rad",
+      skuPrefix: "Kód",
+      priceNotAvailable: "Cena nie je k dispozícii",
+      addToCart: "Vložiť do košíka",
+      listenAudio: "Vypočuť si ukážku",
+      otherFamilyMembers: "Ďalší členovia rodiny",
+      currentProduct: "Aktuálny",
+      variants: "Veľkosti / Varianty",
+      noImage: "Žiadny obrázok",
+      item: "položka",
+      variation: "Variant"
+    }
+  };
+
+  const t = dict[lang] || dict.hu;
   const [activeTab, setActiveTab] = useState<"specs" | "look">("specs");
   const [activeImageId, setActiveImageId] = useState(product.media[0]?.id);
   const [activeVariantId, setActiveVariantId] = useState(product.variants[0]?.id);
@@ -82,8 +163,9 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
     return videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null;
   };
 
-  const sanitizedLongDescription = product.longDescription?.hu 
-    ? DOMPurify.sanitize(product.longDescription.hu, { 
+  const localizedLongDescription = product.longDescription?.[lang] || product.longDescription?.hu;
+  const sanitizedLongDescription = localizedLongDescription
+    ? DOMPurify.sanitize(localizedLongDescription, { 
         ADD_ATTR: ["target", "rel"],
         FORBID_TAGS: ["script", "style", "iframe"],
       }) 
@@ -129,7 +211,7 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
       {/* Background Mandala Container - Fixes sticky overflow issue */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         <div className="absolute top-[-5%] right-[-10%] w-[80%] max-w-[900px] opacity-10 rotate-12">
-          <Image src="/assets/PalAdri-logo-2023-Vegleges-Lezer-light.svg" alt="Mandala textúra" width={900} height={900} className="w-full h-auto" />
+          <Image src="/assets/PalAdri-logo-2023-Vegleges-Lezer-light.svg" alt="Mandala textúra" width={900} height={900} className="w-full h-auto" style={{ height: 'auto' }} />
         </div>
       </div>
       
@@ -140,7 +222,7 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
             className="inline-flex items-center gap-2 text-brand-black/60 hover:text-brand-bronze transition-colors font-montserrat text-sm font-medium group"
           >
             <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-            Vissza a termékekhez
+            {t.backToProducts}
           </Link>
         </div>
 
@@ -163,7 +245,7 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
                 ) : (
                   <Image 
                     src={activeImage.url} 
-                    alt={product.name["hu"] || "Termék kép"} 
+                    alt={product.name[lang] || product.name["hu"] || t.noImage} 
                     fill 
                     className="object-contain"
                     sizes="(max-width: 768px) 100vw, 60vw"
@@ -171,7 +253,7 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
                   />
                 )
               ) : (
-                <div className="absolute inset-0 flex items-center justify-center text-brand-black/40 font-montserrat">Nincs kép</div>
+                <div className="absolute inset-0 flex items-center justify-center text-brand-black/40 font-montserrat">{t.noImage}</div>
               )}
             </div>
             
@@ -210,13 +292,13 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
                 onClick={() => setActiveTab("specs")}
                 className={`py-3 px-6 font-bold text-2xl tracking-widest transition-colors border-b-2 uppercase ${activeTab === "specs" ? "border-brand-bronze text-brand-brown" : "border-transparent text-brand-black/50 hover:text-brand-black"}`}
               >
-                Jellemzők
+                {t.features}
               </button>
               <button 
                 onClick={() => setActiveTab("look")}
                 className={`py-3 px-6 font-bold text-2xl tracking-widest transition-colors border-b-2 uppercase ${activeTab === "look" ? "border-brand-bronze text-brand-brown" : "border-transparent text-brand-black/50 hover:text-brand-black"}`}
               >
-                Méretek és Súly
+                {t.dimensions}
               </button>
             </div>
             
@@ -226,7 +308,7 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
                    {Array.isArray(product.specifications) && product.specifications.length > 0 ? (
                      <ul className="space-y-4">
                        {(() => {
-                         const specs = product.specifications as Array<{ key_hu: string; key_en: string; value_hu: string; value_en: string }>;
+                         const specs = product.specifications as Array<{ key_hu: string; key_en: string; key_sk: string; value_hu: string; value_en: string; value_sk: string }>;
                          // USP-ket előre, a többit utána
                          const sortedSpecs = [...specs].sort((a, b) => {
                            const aIsUsp = a.key_en?.startsWith("USP") || a.key_hu?.startsWith("USP");
@@ -238,8 +320,8 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
 
                          return sortedSpecs.map((spec, i) => {
                            const isUsp = spec.key_en?.startsWith("USP") || spec.key_hu?.startsWith("USP");
-                           const key = spec.key_hu || spec.key_en || `Jellemző ${i + 1}`;
-                           const val = spec.value_hu || spec.value_en || "–";
+                           const key = (spec as Record<string, string>)[`key_${lang}`] || spec.key_hu || spec.key_en || `${t.features} ${i + 1}`;
+                           const val = (spec as Record<string, string>)[`value_${lang}`] || spec.value_hu || spec.value_en || "–";
                            
                            return (
                              <li key={i} className="flex gap-3 items-center">
@@ -256,43 +338,43 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
                        })()}
                      </ul>
                    ) : (
-                     <p className="italic text-brand-black/50">Nincsenek specifikációk rögzítve.</p>
+                     <p className="italic text-brand-black/50">{t.noSpecs}</p>
                    )}
                 </div>
               )}
               {activeTab === "look" && (
                 <div>
-                  <ul className="space-y-4">
-                     {activeVariant?.weight && (
-                       <li className="flex gap-3 items-center">
-                         <div className="w-6 h-6 rounded-full bg-brand-bronze/20 flex items-center justify-center shrink-0">
-                           <div className="w-2 h-2 rounded-full bg-brand-brown"></div>
-                         </div>
-                         <span><strong>Súly:</strong> {activeVariant.weight} kg</span>
-                       </li>
-                     )}
-                     {activeVariant?.width && activeVariant?.height && activeVariant?.depth && (
+                   <ul className="space-y-4">
+                      {activeVariant?.weight && (
                         <li className="flex gap-3 items-center">
-                         <div className="w-6 h-6 rounded-full bg-brand-bronze/20 flex items-center justify-center shrink-0">
-                           <div className="w-2 h-2 rounded-full bg-brand-brown"></div>
-                         </div>
-                         <span><strong>Méretek (Szé x Ma x Mé):</strong> {activeVariant.width} x {activeVariant.height} x {activeVariant.depth} cm</span>
-                       </li>
-                     )}
-                     {!activeVariant?.weight && !activeVariant?.width && <p>Nincsenek méretek megadva ehhez a variációhoz.</p>}
-                  </ul>
+                          <div className="w-6 h-6 rounded-full bg-brand-bronze/20 flex items-center justify-center shrink-0">
+                            <div className="w-2 h-2 rounded-full bg-brand-brown"></div>
+                          </div>
+                          <span><strong>{t.weight}:</strong> {activeVariant.weight} g</span>
+                        </li>
+                      )}
+                      {activeVariant?.width && activeVariant?.height && activeVariant?.depth && (
+                         <li className="flex gap-3 items-center">
+                          <div className="w-6 h-6 rounded-full bg-brand-bronze/20 flex items-center justify-center shrink-0">
+                            <div className="w-2 h-2 rounded-full bg-brand-brown"></div>
+                          </div>
+                          <span><strong>{t.dimensionsLabel}:</strong> {activeVariant.width} x {activeVariant.height} x {activeVariant.depth} cm</span>
+                        </li>
+                      )}
+                      {!activeVariant?.weight && !activeVariant?.width && <p>{t.noDimensions}</p>}
+                   </ul>
                 </div>
               )}
             </div>
 
             {/* Long Description */}
             <div className="bg-white/60 backdrop-blur-md rounded-2xl p-6 lg:p-10 border border-brand-bronze/20 shadow-sm mt-4">
-              <h2 className="text-3xl font-cormorant font-bold text-brand-brown mb-6 uppercase tracking-widest">Részletes leírás</h2>
+              <h2 className="text-3xl font-cormorant font-bold text-brand-brown mb-6 uppercase tracking-widest">{t.detailedDescription}</h2>
               <div className="prose prose-stone max-w-none font-montserrat text-brand-black/80 leading-loose">
                 {sanitizedLongDescription ? (
                   <div dangerouslySetInnerHTML={{ __html: sanitizedLongDescription }} />
                 ) : (
-                  <p className="italic">Nincs elérhető leírás ehhez a termékhez.</p>
+                  <p className="italic">{t.noDescription}</p>
                 )}
               </div>
             </div>
@@ -306,13 +388,13 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
             
             {/* Dinamikus Badge Placeholder - Fentről lefelé a cím bal oldalán flexben */}
             <div className="flex flex-col gap-3 pt-2 shrink-0">
-              <div className="w-8 h-8 rounded-full border border-brand-bronze/30 flex items-center justify-center text-brand-brown bg-[#f8f7f5] shadow-sm transform hover:scale-110 transition-transform" title="Prémium Minőség">
+              <div className="w-8 h-8 rounded-full border border-brand-bronze/30 flex items-center justify-center text-brand-brown bg-[#f8f7f5] shadow-sm transform hover:scale-110 transition-transform" title={t.premiumQuality}>
                 <Award className="w-4 h-4" />
               </div>
-              <div className="w-8 h-8 rounded-full border border-brand-bronze/30 flex items-center justify-center text-brand-brown bg-[#f8f7f5] shadow-sm transform hover:scale-110 transition-transform" title="Eredeti">
+              <div className="w-8 h-8 rounded-full border border-brand-bronze/30 flex items-center justify-center text-brand-brown bg-[#f8f7f5] shadow-sm transform hover:scale-110 transition-transform" title={t.original}>
                 <Shield className="w-4 h-4" />
               </div>
-              <div className="w-8 h-8 rounded-full border border-brand-bronze/30 flex items-center justify-center text-brand-brown bg-[#f8f7f5] shadow-sm transform hover:scale-110 transition-transform" title="Kiemelt Ajánlat">
+              <div className="w-8 h-8 rounded-full border border-brand-bronze/30 flex items-center justify-center text-brand-brown bg-[#f8f7f5] shadow-sm transform hover:scale-110 transition-transform" title={t.featuredOffer}>
                 <Star className="w-4 h-4" />
               </div>
             </div>
@@ -323,30 +405,30 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
                 {product.group && (
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-brand-bronze bg-brand-bronze/5 px-2 py-0.5 rounded border border-brand-bronze/10">
-                      {product.group.name["hu"]} Termékcsalád
+                      {product.group.name[lang] || product.group.name["hu"]} {t.productLine}
                     </span>
                   </div>
                 )}
                 <div className="flex flex-wrap gap-2 mb-2 font-montserrat">
                   {product.categories.map((c) => (
                     <span key={c.id} className="text-[10px] font-bold tracking-widest uppercase text-brand-brown/80 bg-brand-bronze/10 px-2 py-1 flex items-center gap-1 rounded-sm">
-                      {c.name["hu"] || c.slug["hu"]}
+                      {c.name[lang] || c.name["hu"] || c.slug[lang] || c.slug["hu"]}
                     </span>
                   ))}
                 </div>
                 <h1 className="font-montserrat text-lg lg:text-2xl font-bold text-brand-black tracking-widest uppercase leading-tight mb-4">
-                  {product.name["hu"] || "Terméknév"}
+                  {product.name[lang] || product.name["hu"] || t.unnamedProduct}
                 </h1>
                 <p className="text-brand-black/40 text-[11px] font-bold uppercase tracking-widest mb-4">
-                  Cikkszám: {activeVariant?.sku || "–"}
+                  {t.skuPrefix}: {activeVariant?.sku || "–"}
                 </p>
               </div>
 
             {/* Felső Rövid Ismertető Pipa Pontokkal */}
             <div className="text-brand-black/80 text-sm space-y-2 pb-4">
-              {product.shortDescription?.["hu"] ? (
+              {product.shortDescription?.[lang] || product.shortDescription?.["hu"] ? (
                  <div className="whitespace-pre-line leading-relaxed flex flex-col gap-3">
-                   {product.shortDescription["hu"].split("\n").map((line, i) => {
+                   {(product.shortDescription[lang] || product.shortDescription["hu"]).split("\n").map((line: string, i: number) => {
                       if (!line.trim()) return null;
                       return (
                         <div key={i} className="flex gap-3 items-start">
@@ -364,9 +446,19 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
             {/* Ár és Termék Jellemzők */}
             <div className="flex flex-col gap-3 mt-2">
                <div className="flex flex-col gap-0.5">
-                 {priceHuf && <div className="text-3xl font-bold text-brand-black">{priceHuf}</div>}
-                 {priceEur && <div className="text-lg text-brand-black/50 font-medium">{priceEur}</div>}
-                 {!priceHuf && !priceEur && <div className="text-xl font-bold text-brand-black italic">Ár nem elérhető</div>}
+                 {lang === "hu" ? (
+                   <>
+                     {priceHuf && <div className="text-3xl font-bold text-brand-black">{priceHuf}</div>}
+                     {priceEur && <div className="text-lg text-brand-black/50 font-medium">{priceEur}</div>}
+                   </>
+                 ) : (
+                   <>
+                     {priceEur && <div className="text-3xl font-bold text-brand-black">{priceEur}</div>}
+                   </>
+                 )}
+                 {((lang === "hu" && !priceHuf && !priceEur) || (lang !== "hu" && !priceEur)) && (
+                   <div className="text-xl font-bold text-brand-black italic">{t.priceNotAvailable}</div>
+                 )}
                </div>
 
                {/* Specifikációk kistábla formátumban */}
@@ -381,14 +473,14 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
                        return usps.map((usp, i) => (
                          <div key={i} className="flex gap-2 items-center">
                            <Check className="w-3.5 h-3.5 text-brand-black/60 shrink-0" />
-                           <span className="font-bold">{renderValueWithLinks(usp.value_hu || usp.value_en)}</span>
+                           <span className="font-bold">{renderValueWithLinks((usp as Record<string, string>)[`value_${lang}`] || usp.value_hu || usp.value_en)}</span>
                          </div>
                        ));
                      }
 
                      return specs.slice(0, 3).map((spec, i) => {
-                       const key = spec.key_hu || spec.key_en || `Jellemző ${i + 1}`;
-                       const val = spec.value_hu || spec.value_en || "–";
+                       const key = (spec as Record<string, string>)[`key_${lang}`] || spec.key_hu || spec.key_en || `${t.features} ${i + 1}`;
+                       const val = (spec as Record<string, string>)[`value_${lang}`] || spec.value_hu || spec.value_en || "–";
                        return (
                          <div key={i} className="flex gap-2 items-center">
                            <Award className="w-3.5 h-3.5 text-brand-black/60 shrink-0" />
@@ -405,7 +497,7 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
             {/* Kosárba gomb */}
             <div className="mt-2">
               <Button className="w-full sm:w-auto px-8 h-12 text-sm bg-brand-bronze hover:bg-[#726251] text-white rounded-md shadow-md hover:shadow-lg transition-all duration-300 font-bold tracking-wider border border-transparent">
-                Kosárba rakom
+                {t.addToCart}
               </Button>
             </div>
 
@@ -421,7 +513,7 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
                   </button>
                   
                   <div className="flex-1 flex flex-col gap-1">
-                    <span className="text-[10px] font-bold text-brand-bronze uppercase tracking-widest">Hangminta hallgatása</span>
+                    <span className="text-[10px] font-bold text-brand-bronze uppercase tracking-widest">{t.listenAudio}</span>
                     <input 
                       type="range"
                       min="0"
@@ -469,8 +561,8 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
             {product.groupProducts && product.groupProducts.length > 1 && (
               <div className="flex flex-col gap-4 mt-6">
                 <div className="flex items-center justify-between border-b border-brand-bronze/10 pb-2">
-                  <h4 className="font-bold text-brand-black text-sm uppercase tracking-wider">A család további tagjai</h4>
-                  <span className="text-[10px] text-brand-black/40 font-medium bg-brand-bronze/5 px-2 py-0.5 rounded">{product.groupProducts.length} termék</span>
+                  <h4 className="font-bold text-brand-black text-sm uppercase tracking-wider">{t.otherFamilyMembers}</h4>
+                  <span className="text-[10px] text-brand-black/40 font-medium bg-brand-bronze/5 px-2 py-0.5 rounded">{product.groupProducts.length} {t.item}</span>
                 </div>
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                   {product.groupProducts.map((gp) => {
@@ -478,14 +570,14 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
                     return (
                       <Link 
                         key={gp.id}
-                        href={`/products/${gp.slug["hu"]}`}
+                        href={`/products/${gp.slug[lang] || gp.slug["hu"]}`}
                         className={`group/item flex flex-col gap-3 p-3 rounded-xl bg-white border-2 transition-all hover:shadow-md ${isCurrent ? 'border-brand-bronze ring-1 ring-brand-bronze/10' : 'border-brand-bronze/5 hover:border-brand-bronze/20'}`}
                       >
                         <div className="relative aspect-square w-full shrink-0 rounded-lg overflow-hidden bg-brand-bronze/5 border border-brand-bronze/10">
                           {gp.mainImageUrl ? (
                             <Image 
                               src={gp.mainImageUrl} 
-                              alt={gp.name["hu"]} 
+                              alt={gp.name[lang] || gp.name["hu"]} 
                               fill 
                               className={`object-cover ${isCurrent ? 'opacity-100' : 'opacity-80 group-hover/item:opacity-100'} transition-all`}
                             />
@@ -502,16 +594,16 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
                         </div>
                         <div className="flex flex-col min-w-0">
                           <h5 className={`text-[11px] font-bold font-montserrat uppercase tracking-tight line-clamp-2 ${isCurrent ? 'text-brand-brown' : 'text-brand-black group-hover/item:text-brand-bronze'} transition-colors`}>
-                            {gp.name["hu"]}
+                            {gp.name[lang] || gp.name["hu"]}
                           </h5>
-                          {gp.shortDescription?.["hu"] && (
+                          {(gp.shortDescription?.[lang] || gp.shortDescription?.["hu"]) && (
                             <p className="text-[10px] text-brand-black/50 line-clamp-2 leading-tight mt-1 font-montserrat">
-                              {gp.shortDescription["hu"]}
+                              {gp.shortDescription[lang] || gp.shortDescription["hu"]}
                             </p>
                           )}
                           {isCurrent && (
                             <span className="text-[9px] font-bold text-brand-bronze mt-2 flex items-center gap-1 uppercase tracking-widest">
-                              <Check size={8} /> Jelenlegi
+                              <Check size={8} /> {t.currentProduct}
                             </span>
                           )}
                         </div>
@@ -525,7 +617,7 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
             {/* Variációk */}
             {product.variants.length > 1 && (
               <div className="flex flex-col gap-4 mt-8">
-                <h4 className="font-bold text-brand-black text-sm uppercase tracking-wider border-b border-brand-bronze/10 pb-2">Méretek / Variációk</h4>
+                <h4 className="font-bold text-brand-black text-sm uppercase tracking-wider border-b border-brand-bronze/10 pb-2">{t.variants}</h4>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {product.variants.map((v, i) => (
                     <button 
@@ -537,7 +629,7 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
                          {v.sku ? v.sku.slice(0, 3).toUpperCase() : `V${i+1}`}
                       </div>
                       <span className="text-[10px] font-bold leading-tight line-clamp-2">
-                        {v.sku ? v.sku : `Variáció ${i + 1}`}
+                        {v.sku ? v.sku : `${t.variation} ${i + 1}`}
                       </span>
                     </button>
                   ))}

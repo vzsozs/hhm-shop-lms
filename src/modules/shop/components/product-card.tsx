@@ -6,7 +6,36 @@ import { ShoppingCart, Download, Package } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 
 export function ProductCard({ product, lang }: { product: ProductListItem; lang: string }) {
-  const name = (product.name as Record<string, string>)[lang] || product.name["hu"] || "Névtelen termék";
+  const dict: Record<string, Record<string, string>> = {
+    hu: {
+      features: "Jellemzők",
+      noData: "Nincs rendelkezésre álló adat",
+      more: "továbbiak...",
+      priceNotAvailable: "Ár nem elérhető",
+      unnamedProduct: "Névtelen termék",
+      addToCart: "Kosárba tesz"
+    },
+    en: {
+      features: "Features",
+      noData: "No data available",
+      more: "more...",
+      priceNotAvailable: "Price not available",
+      unnamedProduct: "Unnamed product",
+      addToCart: "Add to cart"
+    },
+    sk: {
+      features: "Vlastnosti",
+      noData: "Žiadne údaje nie sú k dispozícii",
+      more: "ďalšie...",
+      priceNotAvailable: "Cena nie je k dispozícii",
+      unnamedProduct: "Nepomenovaný produkt",
+      addToCart: "Vložiť do košíka"
+    }
+  };
+
+  const t = dict[lang] || dict.hu;
+
+  const name = (product.name as Record<string, string>)[lang] || product.name["hu"] || t.unnamedProduct;
   const desc = product.description ? (product.description as Record<string, string>)[lang] || product.description["hu"] || "" : "";
   
   // Ár formázó (egyelőre fixen HUF vagy EUR, függően a kéréstől, most simán megmutatjuk mindkettőt ha van)
@@ -29,23 +58,27 @@ export function ProductCard({ product, lang }: { product: ProductListItem; lang:
             
             {/* Hover Overlay - Dinamikus specifikációk */}
             <div className="absolute inset-x-0 bottom-0 bg-white/95 backdrop-blur-sm p-4 transition-transform duration-300 translate-y-full group-hover/img:translate-y-0 border-t border-brand-bronze/10">
-              <p className="text-[10px] font-bold tracking-widest uppercase text-brand-bronze mb-2">Jellemzők</p>
+              <p className="text-[10px] font-bold tracking-widest uppercase text-brand-bronze mb-2">{t.features}</p>
               <ul className="space-y-1">
                 {Array.isArray(product.specifications) && product.specifications.length > 0 ? (
-                  (product.specifications as Array<{ key_hu?: string; key_en?: string; value_hu?: string; value_en?: string }>).slice(0, 4).map((spec, i) => (
-                    <li key={i} className="flex items-start gap-2 text-[11px] leading-tight text-brand-black/80 font-montserrat">
-                      <div className="w-1 h-1 rounded-full bg-brand-bronze mt-1.5 shrink-0" />
-                      <span className="line-clamp-2">
-                        <strong className="text-brand-brown">{spec.key_hu || spec.key_en}:</strong> {spec.value_hu || spec.value_en}
-                      </span>
-                    </li>
-                  ))
+                   (product.specifications as Array<Record<string, string>>).slice(0, 4).map((spec, i) => {
+                     const key = spec[`key_${lang}`] || spec.key_hu || spec.key_en;
+                     const value = spec[`value_${lang}`] || spec.value_hu || spec.value_en;
+                     return (
+                       <li key={i} className="flex items-start gap-2 text-[11px] leading-tight text-brand-black/80 font-montserrat">
+                         <div className="w-1 h-1 rounded-full bg-brand-bronze mt-1.5 shrink-0" />
+                         <span className="line-clamp-2">
+                           <strong className="text-brand-brown">{key}:</strong> {value}
+                         </span>
+                       </li>
+                     );
+                   })
                 ) : (
-                  <li className="text-[10px] italic text-brand-black/40 font-montserrat">Nincs rendelkezésre álló adat</li>
+                  <li className="text-[10px] italic text-brand-black/40 font-montserrat">{t.noData}</li>
                 )}
               </ul>
               {Array.isArray(product.specifications) && product.specifications.length > 4 && (
-                <p className="text-[9px] text-brand-bronze mt-2 font-bold uppercase tracking-wider text-right">továbbiak...</p>
+                <p className="text-[9px] text-brand-bronze mt-2 font-bold uppercase tracking-wider text-right">{t.more}</p>
               )}
             </div>
           </Link>
@@ -99,12 +132,22 @@ export function ProductCard({ product, lang }: { product: ProductListItem; lang:
 
       <CardFooter className="p-5 flex items-center justify-between border-t border-brand-bronze/10 mt-auto bg-transparent pb-4">
         <div className="flex flex-col">
-          {priceHuf && <span className="font-bold text-lg text-brand-black">{priceHuf}</span>}
-          {priceEur && <span className="text-xs text-brand-black/60">{priceEur}</span>}
-          {!priceHuf && !priceEur && <span className="italic text-brand-black/50 text-sm">Ár nem elérhető</span>}
+          {lang === "hu" ? (
+            <>
+              {priceHuf && <span className="font-bold text-lg text-brand-black">{priceHuf}</span>}
+              {priceEur && <span className="text-xs text-brand-black/60">{priceEur}</span>}
+            </>
+          ) : (
+            <>
+              {priceEur && <span className="font-bold text-lg text-brand-black">{priceEur}</span>}
+            </>
+          )}
+          {((lang === "hu" && !priceHuf && !priceEur) || (lang !== "hu" && !priceEur)) && (
+            <span className="italic text-brand-black/50 text-sm">{t.priceNotAvailable}</span>
+          )}
         </div>
         
-        <Button size="icon" className="rounded-full h-11 w-11 shadow-md hover:scale-105 transition-transform bg-[#8a7964] hover:bg-[#6c5e4d] text-white border-none" aria-label="Kosárba tesz">
+        <Button size="icon" className="rounded-full h-11 w-11 shadow-md hover:scale-105 transition-transform bg-[#8a7964] hover:bg-[#6c5e4d] text-white border-none" aria-label={t.addToCart}>
           <ShoppingCart className="h-4 w-4" />
         </Button>
       </CardFooter>

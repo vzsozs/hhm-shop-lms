@@ -3,16 +3,28 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
+import { useLanguage } from '@/context/language-context';
+import { SUPPORTED_LANGUAGES, Language } from '@/modules/shared/lib/i18n-constants';
 
 export default function Header() {
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
+  const { language, setLanguage } = useLanguage();
   
   const navLinkClass = "px-4 py-2 rounded-[20px] bg-white/15 border border-white/10 text-[#462727] hover:border-white transition-colors tracking-[0.1em] uppercase font-cormorant font-bold text-[0.9em] flex flex-row items-center justify-center relative leading-tight text-center z-10";
 
   const shopBtnClass = "pl-[12px] pr-4 py-2 rounded-[20px] bg-brand-bronze-light text-white font-normal border border-[#b66f3921] uppercase tracking-[0.1em] font-cormorant text-[0.9em] flex items-center justify-center relative hover:border-white transition-colors h-[34px] z-10";
 
   const iconBtnClass = "flex items-center justify-center bg-white/15 border border-white/15 rounded-[20px] h-[38px] w-[38px] hover:border-white transition-colors relative cursor-pointer z-10";
+
+  const handleLangChange = (lang: Language) => {
+    setLanguage(lang);
+    setLangOpen(false);
+    router.refresh();
+  };
 
   return (
     <header 
@@ -70,9 +82,29 @@ export default function Header() {
                    </Link>
                    
                    {/* Language Dropdown Area */}
-                   <div className="absolute right-4 flex flex-col items-center justify-center w-[36px] h-[36px] rounded-full border border-white/30 z-10 cursor-pointer text-white hover:bg-white/10 transition-colors">
-                      <span className="text-[10px] font-light leading-none mt-[2px] tracking-widest uppercase">HU</span>
-                      <img src="/assets/arrow_mini-white.svg" className="w-[6px] mt-[2px]" alt=""/>
+                   <div 
+                     className="absolute right-4 flex flex-col items-center justify-center w-[36px] h-[36px] rounded-full border border-white/30 z-10 cursor-pointer text-white hover:bg-white/10 transition-colors"
+                     onClick={() => setLangOpen(!langOpen)}
+                   >
+                      <span className="text-[10px] font-light leading-none mt-[2px] tracking-widest uppercase">{language}</span>
+                      <img src="/assets/arrow_mini-white.svg" className={`w-[6px] mt-[2px] transition-transform ${langOpen ? 'rotate-180' : ''}`} alt=""/>
+                      
+                      {langOpen && (
+                        <div className="absolute top-[40px] right-0 flex flex-col items-center bg-brand-bronze/90 backdrop-blur-md border border-white/10 rounded-xl py-2 shadow-2xl overflow-hidden min-w-[50px] z-[60]">
+                           {SUPPORTED_LANGUAGES.map((lang) => (
+                              <button 
+                                key={lang} 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleLangChange(lang);
+                                }}
+                                className={`w-full px-4 py-2 text-[10px] uppercase tracking-widest hover:bg-white/10 transition-colors ${language === lang ? 'text-white font-bold' : 'text-white/60'}`}
+                              >
+                                 {lang}
+                              </button>
+                           ))}
+                        </div>
+                      )}
                    </div>
                 </div>
              </div>
@@ -91,9 +123,35 @@ export default function Header() {
              </Link>
           </div>
           
-          <Link href="/shop" className="p-2 border border-white/20 rounded-[20px] bg-brand-bronze/50 backdrop-blur-sm z-50">
-             <img src="/assets/icons-cart.svg" className="w-5" alt="Shop"/>
-          </Link>
+          <div className="flex items-center gap-2 z-50">
+             <div className="relative">
+                <button 
+                  onClick={() => setLangOpen(!langOpen)}
+                  className="p-2 border border-white/20 rounded-[20px] bg-brand-bronze/50 backdrop-blur-sm text-[10px] uppercase tracking-widest text-white w-10 flex items-center justify-center font-light"
+                >
+                   {language}
+                </button>
+                {langOpen && (
+                  <div className="absolute top-[42px] right-0 flex flex-col items-center bg-brand-bronze/90 backdrop-blur-md border border-white/10 rounded-xl py-1 shadow-2xl overflow-hidden min-w-[50px] z-[60]">
+                     {SUPPORTED_LANGUAGES.map((lang) => (
+                        <button 
+                          key={lang} 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleLangChange(lang);
+                          }}
+                          className={`w-full px-4 py-2 text-[10px] uppercase tracking-widest hover:bg-white/10 transition-colors ${language === lang ? 'text-white font-bold' : 'text-white/60'}`}
+                        >
+                           {lang}
+                        </button>
+                     ))}
+                  </div>
+                )}
+             </div>
+             <Link href="/shop" className="p-2 border border-white/20 rounded-[20px] bg-brand-bronze/50 backdrop-blur-sm">
+                <img src="/assets/icons-cart.svg" className="w-5" alt="Shop"/>
+             </Link>
+          </div>
        </div>
 
        {/* Mobile Menu Overlay */}

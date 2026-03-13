@@ -222,7 +222,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
   const [productData] = await db
     .select()
     .from(products)
-    .where(sql`${products.slug}->>'hu' = ${slug}`)
+    .where(sql`${products.slug}->>'hu' = ${slug} OR ${products.slug}->>'en' = ${slug} OR ${products.slug}->>'sk' = ${slug}`)
     .limit(1);
 
   if (!productData) {

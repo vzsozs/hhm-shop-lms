@@ -95,6 +95,50 @@ export function ProductFilters({
     }
   }, [debouncedSearchTerm, type, categoryId, sort, pathname, router, searchParams]);
 
+  const dict: Record<string, Record<string, string>> = {
+    hu: {
+      searchPlaceholder: "Keresés a termékek között...",
+      typeAll: "Minden Típus",
+      typePhysical: "Termékek",
+      typeDigital: "Tanfolyamok",
+      categoryAll: "Összes Kategória",
+      sortLabel: "Rendezés",
+      sortNewest: "Legújabb elöl",
+      sortPriceAsc: "Ár: Olcsótól drágábbra",
+      sortPriceDesc: "Ár: Drágától olcsóbbra",
+      sortNameAsc: "Név: A-Z",
+      sortNameDesc: "Név: Z-A",
+    },
+    en: {
+      searchPlaceholder: "Search products...",
+      typeAll: "All Types",
+      typePhysical: "Products",
+      typeDigital: "Courses",
+      categoryAll: "All Categories",
+      sortLabel: "Sort",
+      sortNewest: "Newest first",
+      sortPriceAsc: "Price: Low to high",
+      sortPriceDesc: "Price: High to low",
+      sortNameAsc: "Name: A-Z",
+      sortNameDesc: "Name: Z-A",
+    },
+    sk: {
+      searchPlaceholder: "Hľadať produkty...",
+      typeAll: "Všetky typy",
+      typePhysical: "Produkty",
+      typeDigital: "Kurzy",
+      categoryAll: "Všetky kategórie",
+      sortLabel: "Zoradiť",
+      sortNewest: "Najnovšie",
+      sortPriceAsc: "Cena: Od najlacnejších",
+      sortPriceDesc: "Cena: Od najdrahších",
+      sortNameAsc: "Názov: A-Z",
+      sortNameDesc: "Názov: Z-A",
+    }
+  };
+
+  const t = dict[lang] || dict.hu;
+
   return (
     <div className="flex flex-col md:flex-row flex-wrap gap-3 bg-white/60 backdrop-blur-md p-4 rounded-2xl border border-brand-bronze/20 shadow-sm font-montserrat items-center w-full">
       
@@ -102,7 +146,7 @@ export function ProductFilters({
       <div className="relative flex-grow w-full md:w-auto md:min-w-[200px]">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-brand-black/50" />
         <Input 
-          placeholder="Keresés termékek között..." 
+          placeholder={t.searchPlaceholder} 
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="pl-11 pr-10 bg-white/80 border-brand-bronze/30 w-full rounded-xl text-brand-black placeholder:text-brand-black/40 h-[46px] focus-visible:ring-1 focus-visible:ring-brand-bronze/50 focus-visible:border-brand-bronze/50"
@@ -123,12 +167,12 @@ export function ProductFilters({
       <div className="w-full md:w-[160px] shrink-0">
         <Select value={type} onValueChange={setType}>
           <SelectTrigger className="w-full bg-white/80 border-brand-bronze/30 text-brand-black h-[46px] rounded-xl focus:ring-1 focus:ring-brand-bronze/50 [&>span]:truncate [&>span]:block [&>span]:text-left overflow-hidden items-center justify-between">
-            <SelectValue placeholder="Minden Típus" />
+            <SelectValue placeholder={t.typeAll} />
           </SelectTrigger>
           <SelectContent className="bg-white border-brand-bronze/20 rounded-xl shadow-lg text-brand-black">
-            <SelectItem value="all" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">Minden Típus</SelectItem>
-            <SelectItem value="physical" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">Termékek</SelectItem>
-            <SelectItem value="digital" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">Tanfolyamok</SelectItem>
+            <SelectItem value="all" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">{t.typeAll}</SelectItem>
+            <SelectItem value="physical" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">{t.typePhysical}</SelectItem>
+            <SelectItem value="digital" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">{t.typeDigital}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -137,10 +181,10 @@ export function ProductFilters({
       <div className="w-full md:w-[190px] shrink-0">
         <Select value={categoryId} onValueChange={setCategoryId}>
           <SelectTrigger className="w-full bg-white/80 border-brand-bronze/30 text-brand-black h-[46px] rounded-xl focus:ring-1 focus:ring-brand-bronze/50 [&>span]:truncate [&>span]:block [&>span]:text-left overflow-hidden items-center justify-between">
-            <SelectValue placeholder="Összes Kategória" />
+            <SelectValue placeholder={t.categoryAll} />
           </SelectTrigger>
           <SelectContent className="bg-white border-brand-bronze/20 rounded-xl shadow-lg text-brand-black w-[190px]">
-            <SelectItem value="all" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">Összes Kategória</SelectItem>
+            <SelectItem value="all" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">{t.categoryAll}</SelectItem>
             {categories.map((cat) => (
               <SelectItem key={cat.id} value={cat.id} className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black truncate">
                 {cat.name[lang] || cat.name["hu"] || cat.slug?.[lang] || cat.slug?.["hu"]}
@@ -154,14 +198,14 @@ export function ProductFilters({
       <div className="w-full md:w-[200px] shrink-0">
         <Select value={sort} onValueChange={setSort}>
           <SelectTrigger className="w-full bg-white/80 border-brand-bronze/30 text-brand-black h-[46px] rounded-xl focus:ring-1 focus:ring-brand-bronze/50 [&>span]:truncate [&>span]:block [&>span]:text-left overflow-hidden items-center justify-between">
-            <SelectValue placeholder="Rendezés" />
+            <SelectValue placeholder={t.sortLabel} />
           </SelectTrigger>
           <SelectContent className="bg-white border-brand-bronze/20 rounded-xl shadow-lg text-brand-black w-[200px]">
-            <SelectItem value="newest" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">Legújabb elöl</SelectItem>
-            <SelectItem value="price-asc" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">Ár: Olcsótól drágábbra</SelectItem>
-            <SelectItem value="price-desc" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">Ár: Drágától olcsóbbra</SelectItem>
-            <SelectItem value="name-asc" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">Név: A-Z</SelectItem>
-            <SelectItem value="name-desc" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">Név: Z-A</SelectItem>
+            <SelectItem value="newest" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">{t.sortNewest}</SelectItem>
+            <SelectItem value="price-asc" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">{t.sortPriceAsc}</SelectItem>
+            <SelectItem value="price-desc" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">{t.sortPriceDesc}</SelectItem>
+            <SelectItem value="name-asc" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">{t.sortNameAsc}</SelectItem>
+            <SelectItem value="name-desc" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">{t.sortNameDesc}</SelectItem>
           </SelectContent>
         </Select>
       </div>

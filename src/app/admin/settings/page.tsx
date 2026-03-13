@@ -98,11 +98,11 @@ export default function SettingsPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-fade-in pb-20">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-          <Settings className="h-8 w-8 text-brand-orange" />
+        <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+          <Settings className="text-brand-orange" size={28} />
           Általános Beállítások
         </h1>
-        <p className="text-white/50">Globális beállítások és testreszabás.</p>
+        <p className="text-sm text-white/50 mt-1">Globális beállítások és rendszerparaméterek kezelése</p>
       </div>
 
       <Card className="bg-admin-card border-white/5 shadow-2xl overflow-hidden">

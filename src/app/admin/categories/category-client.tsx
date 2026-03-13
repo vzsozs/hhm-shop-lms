@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Tag } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -88,7 +88,10 @@ export function CategoryClient({ categories, flatCategories }: CategoryClientPro
     <>
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">Kategóriák</h1>
+          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+            <Tag className="text-brand-orange" size={28} />
+            Kategóriák
+          </h1>
           <p className="text-sm text-white/50 mt-1">Webshop termékkategóriák kezelése több nyelven.</p>
         </div>
         <Button onClick={handleCreate} className="px-4 h-10 bg-brand-orange hover:bg-brand-orange/90 rounded-xl flex items-center justify-center gap-2 text-white font-medium transition-colors shadow-lg shadow-brand-orange/20">
@@ -163,7 +166,8 @@ export function CategoryClient({ categories, flatCategories }: CategoryClientPro
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="bg-neutral-900 border-white/10 max-w-4xl overflow-y-auto max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-white mb-4">
+            <DialogTitle className="text-xl font-bold text-white mb-4 flex items-center gap-3">
+              <Tag className="text-brand-orange" size={24} />
               {editingCategory ? "Kategória szerkesztése" : "Új kategória létrehozása"}
             </DialogTitle>
           </DialogHeader>

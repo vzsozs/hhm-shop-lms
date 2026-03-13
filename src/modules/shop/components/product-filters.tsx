@@ -12,40 +12,40 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useDebounce } from "use-debounce"; // Gyors keresés várakozás 
+import { useDebounce } from "use-debounce"; 
 
 type CategoryItem = { id: string; name: Record<string, string>; slug: Record<string, string> };
 
 interface ProductFiltersProps {
   initialSearch?: string;
-  initialType?: "physical" | "digital";
+  initialBadge?: string;
   initialCategoryId?: string;
   initialSort?: string;
   categories: CategoryItem[];
+  badgeSettings: any[];
   lang: string;
 }
 
 export function ProductFilters({ 
   initialSearch = "", 
-  initialType, 
+  initialBadge = "all", 
   initialCategoryId = "all",
   initialSort = "newest",
   categories,
+  badgeSettings,
   lang
 }: ProductFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
-  // Lokális állapotok a gyors visszajelzéshez (debouncing miatt elválik az URL-től picit)
   const [searchTerm, setSearchTerm] = useState(initialSearch);
-  const [debouncedSearchTerm] = useDebounce(searchTerm, 500); // 500ms várakozás
+  const [debouncedSearchTerm] = useDebounce(searchTerm, 500);
 
-  const [type, setType] = useState(initialType || "all");
+  const [badge, setBadge] = useState(initialBadge || "all");
   const [categoryId, setCategoryId] = useState(initialCategoryId || "all");
   const [sort, setSort] = useState(initialSort || "newest");
 
-  // Kiszűrjük a végtelen ciklust: az URL-t csak akkor frissítjük, ha az értékek TÉNYLEG eltérnek a jelenlegi URL params-től
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
     let hasChanges = false;
@@ -60,13 +60,13 @@ export function ProductFilters({
       hasChanges = true;
     }
 
-    // Type
-    const currentType = params.get("type") || "all";
-    if (type !== "all" && type !== currentType) {
-      params.set("type", type);
+    // Badge
+    const currentBadge = params.get("badge") || "all";
+    if (badge !== "all" && badge !== currentBadge) {
+      params.set("badge", badge);
       hasChanges = true;
-    } else if (type === "all" && params.has("type")) {
-      params.delete("type");
+    } else if (badge === "all" && params.has("badge")) {
+      params.delete("badge");
       hasChanges = true;
     }
 
@@ -93,14 +93,12 @@ export function ProductFilters({
     if (hasChanges) {
       router.push(`${pathname}?${params.toString()}`);
     }
-  }, [debouncedSearchTerm, type, categoryId, sort, pathname, router, searchParams]);
+  }, [debouncedSearchTerm, badge, categoryId, sort, pathname, router, searchParams]);
 
   const dict: Record<string, Record<string, string>> = {
     hu: {
       searchPlaceholder: "Keresés a termékek között...",
-      typeAll: "Minden Típus",
-      typePhysical: "Termékek",
-      typeDigital: "Tanfolyamok",
+      badgeAll: "Minden tulajdonság",
       categoryAll: "Összes Kategória",
       sortLabel: "Rendezés",
       sortNewest: "Legújabb elöl",
@@ -111,9 +109,7 @@ export function ProductFilters({
     },
     en: {
       searchPlaceholder: "Search products...",
-      typeAll: "All Types",
-      typePhysical: "Products",
-      typeDigital: "Courses",
+      badgeAll: "All Attributes",
       categoryAll: "All Categories",
       sortLabel: "Sort",
       sortNewest: "Newest first",
@@ -124,9 +120,7 @@ export function ProductFilters({
     },
     sk: {
       searchPlaceholder: "Hľadať produkty...",
-      typeAll: "Všetky typy",
-      typePhysical: "Produkty",
-      typeDigital: "Kurzy",
+      badgeAll: "Všetky vlastnosti",
       categoryAll: "Všetky kategórie",
       sortLabel: "Zoradiť",
       sortNewest: "Najnovšie",
@@ -163,16 +157,19 @@ export function ProductFilters({
         )}
       </div>
 
-      {/* Típus választó */}
-      <div className="w-full md:w-[160px] shrink-0">
-        <Select value={type} onValueChange={setType}>
+      {/* Badge választó (Típus helyett) */}
+      <div className="w-full md:w-[200px] shrink-0">
+        <Select value={badge} onValueChange={setBadge}>
           <SelectTrigger className="w-full bg-white/80 border-brand-bronze/30 text-brand-black h-[46px] rounded-xl focus:ring-1 focus:ring-brand-bronze/50 [&>span]:truncate [&>span]:block [&>span]:text-left overflow-hidden items-center justify-between">
-            <SelectValue placeholder={t.typeAll} />
+            <SelectValue placeholder={t.badgeAll} />
           </SelectTrigger>
           <SelectContent className="bg-white border-brand-bronze/20 rounded-xl shadow-lg text-brand-black">
-            <SelectItem value="all" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">{t.typeAll}</SelectItem>
-            <SelectItem value="physical" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">{t.typePhysical}</SelectItem>
-            <SelectItem value="digital" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">{t.typeDigital}</SelectItem>
+            <SelectItem value="all" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">{t.badgeAll}</SelectItem>
+            {badgeSettings.map((bs) => (
+              <SelectItem key={bs.id} value={bs.iconName} className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">
+                {bs.tooltips[lang] || bs.tooltips["hu"] || bs.iconName}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

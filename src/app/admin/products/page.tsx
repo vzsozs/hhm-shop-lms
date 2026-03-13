@@ -8,7 +8,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { PackagePlus, ArrowUpDown, Image as ImageIcon } from "lucide-react";
+import { PackagePlus, ArrowUpDown, Image as ImageIcon, Package } from "lucide-react";
 import { ProductActions } from "./product-actions";
 import { MeinlSyncButton } from "./meinl-sync-button";
 
@@ -79,7 +79,10 @@ export default async function AdminProductsPage({ searchParams }: { searchParams
     <div className="w-full max-w-7xl mx-auto space-y-8 pb-12">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Termékek</h1>
+          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+            <Package className="text-brand-orange" size={28} />
+            Termékek
+          </h1>
           <p className="text-sm text-white/50 mt-1">Az összes elérhető fizikai és digitális termék kezelése</p>
         </div>
         <div className="flex items-center gap-3">

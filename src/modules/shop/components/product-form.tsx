@@ -154,7 +154,10 @@ export function ProductForm({ categories = [], products = [], productGroups = []
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <Card className={styles.container}>
           <CardHeader className={styles.cardHeader}>
-            <CardTitle className={styles.cardTitle}>{isEditMode ? "Termék szerkesztése" : "Új termék hozzáadása"}</CardTitle>
+            <CardTitle className={`${styles.cardTitle} flex items-center gap-3`}>
+              <Package className="text-brand-orange" size={24} />
+              {isEditMode ? "Termék szerkesztése" : "Új termék hozzáadása"}
+            </CardTitle>
             <div className="flex items-center gap-6">
               <FormField
                   control={form.control}

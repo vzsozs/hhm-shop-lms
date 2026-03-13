@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getActiveProducts, getAllCategories } from "@/modules/shop/queries";
+import { getActiveProducts, getAllCategories, getAllBadgeSettings } from "@/modules/shop/queries";
 import { ProductCard } from "@/modules/shop/components/product-card";
 import { ProductFilters } from "@/modules/shop/components/product-filters";
 import { cookies } from "next/headers";
@@ -14,18 +14,17 @@ export default async function HomePage({
 }) {
   const resolvedSearchParams = await searchParams;
   const search = typeof resolvedSearchParams.search === "string" ? resolvedSearchParams.search : undefined;
-  const type = (resolvedSearchParams.type === "physical" || resolvedSearchParams.type === "digital") 
-      ? resolvedSearchParams.type 
-      : undefined;
+  const badge = typeof resolvedSearchParams.badge === "string" ? resolvedSearchParams.badge : undefined;
   const categoryId = typeof resolvedSearchParams.categoryId === "string" ? resolvedSearchParams.categoryId : undefined;
   const sort = typeof resolvedSearchParams.sort === "string" ? resolvedSearchParams.sort : "newest";
 
   const cookieStore = await cookies();
   const lang = (cookieStore.get("app_lang")?.value as Language) || "hu";
 
-  const [products, categories] = await Promise.all([
-    getActiveProducts({ search, type, categoryId, sort }),
-    getAllCategories()
+  const [products, categories, badgeSettings] = await Promise.all([
+    getActiveProducts({ search, badge, categoryId, sort }),
+    getAllCategories(),
+    getAllBadgeSettings()
   ]);
 
   const dict: Record<Language, { title: string; description: string; noResults: string; tryAgain: string }> = {
@@ -65,11 +64,12 @@ export default async function HomePage({
       <div className="w-full mb-10">
         <Suspense fallback={<div className="h-[72px] w-full bg-white/40 animate-pulse rounded-2xl border border-brand-bronze/20" />}>
           <ProductFilters 
-            key={categoryId || 'all'}
+            key={`${categoryId || 'all'}-${badge || 'all'}`}
             initialSearch={search} 
-            initialType={type} 
+            initialBadge={badge} 
             initialCategoryId={categoryId} 
             categories={categories}
+            badgeSettings={badgeSettings}
             lang={lang}
           />
         </Suspense>

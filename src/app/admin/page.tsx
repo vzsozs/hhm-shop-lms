@@ -1,5 +1,5 @@
 import { StatCard } from "@/components/admin/stat-card";
-import { DollarSign, ShoppingCart, Users, TrendingUp, PackagePlus, UserPlus, Image as ImageIcon } from "lucide-react";
+import { DollarSign, ShoppingCart, Users, TrendingUp, PackagePlus, UserPlus, Image as ImageIcon, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { db } from "@/db";
 import { products, productVariants, productMedia, categories, productCategories } from "@/db/schema/shop";
@@ -31,7 +31,10 @@ export default async function AdminDashboardPage() {
     <div className="w-full max-w-7xl mx-auto space-y-8">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Kezelőpult</h1>
+          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+            <LayoutDashboard className="text-brand-orange" size={28} />
+            Kezelőpult
+          </h1>
           <p className="text-sm text-white/50 mt-1">Áttekintés az üzlet és az oktatási platform teljesítményéről</p>
         </div>
         <div className="flex items-center gap-3">

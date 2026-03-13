@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { UserActions } from "./user-actions";
 import { TestEmailButton } from "./test-email-button";
 import { auth } from "@/auth";
+import { Users } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -35,10 +36,13 @@ export default async function AdminUsersPage() {
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-8 pb-12">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Felhasználók</h1>
-          <p className="text-white/50 mt-1">Az összes regisztrált Shop és LMS fiók kezelése.</p>
+          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+            <Users className="text-brand-orange" size={28} />
+            Felhasználók
+          </h1>
+          <p className="text-sm text-white/50 mt-1">Az összes regisztrált Shop és LMS fiók kezelése.</p>
         </div>
         <TestEmailButton />
       </div>

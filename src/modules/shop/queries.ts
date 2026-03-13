@@ -4,7 +4,7 @@ import { eq, and, sql, inArray, asc, desc } from "drizzle-orm";
 
 export type ProductListFilters = {
   search?: string;
-  type?: "physical" | "digital";
+  badge?: string;
   categoryId?: string;
   sort?: string;
 };
@@ -36,8 +36,10 @@ export async function getActiveProducts(filters?: ProductListFilters): Promise<P
     );
   }
 
-  if (filters?.type) {
-    conditions.push(eq(products.type, filters.type));
+  if (filters?.badge && filters.badge !== "all") {
+    conditions.push(
+      sql`${products.badges} @> ${JSON.stringify([{ icon: filters.badge }])}::jsonb`
+    );
   }
 
   if (filters?.categoryId) {
@@ -314,10 +316,8 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
           slug: item.slug as Record<string, string>,
           shortDescription: item.shortDescription as Record<string, string> | null,
           mainImageUrl: item.mediaUrl,
-          badges: ((item.badges || []) as unknown[]).map(b => {
-            if (typeof b === 'string') return { icon: b, tooltip: {} };
-            const badge = b as { icon: string; tooltip: Record<string, string> };
-            return { icon: badge.icon, tooltip: badge.tooltip || {} };
+          badges: ((item.badges || []) as { icon: string }[]).map(badge => {
+            return { icon: badge.icon, tooltip: badgeSettingsMap.get(badge.icon) || {} };
           }) as { icon: string; tooltip: Record<string, string> }[],
         });
       }
@@ -370,13 +370,18 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
     } : null,
     groupProducts: groupProductsData.map(gp => ({
       id: gp.id,
-      name: gp.name as Record<string, string>,
-      slug: gp.slug as Record<string, string>,
-      shortDescription: gp.shortDescription as Record<string, string> | null,
+      name: gp.name,
+      slug: gp.slug,
+      shortDescription: gp.shortDescription,
       mainImageUrl: gp.mainImageUrl,
-      badges: gp.badges as { icon: string; tooltip: Record<string, string> }[],
+      badges: gp.badges,
     })),
   };
+}
+
+export async function getAllBadgeSettings() {
+  const settings = await db.select().from(badgeSettings);
+  return settings;
 }
 
 // Termék lekérdezése ID alapján (admin felülethez)

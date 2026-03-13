@@ -1,10 +1,12 @@
 "use server";
 
 import { db } from "@/db";
-import { products, productVariants, productMedia, productCategories, productRecommendations, productAttachments, productGroups } from "@/db/schema/shop";
+import { products, productVariants, productMedia, productCategories, productRecommendations, productAttachments, productGroups, badgeSettings } from "@/db/schema/shop";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { createProductServerSchema, CreateProductPayload } from "./schemas";
+import fs from "fs";
+import path from "path";
+import { badgeSettingsSchema, BadgeSettingsPayload, createProductServerSchema, CreateProductPayload } from "./schemas";
 import { eq, sql } from "drizzle-orm";
 
 // Csoport-slug generálás
@@ -126,6 +128,7 @@ export async function createProduct(formData: CreateProductPayload) {
           status: validated.status,
           priority: validated.priority,
           layoutTemplate: validated.layoutTemplate,
+          badges: validated.badges,
           groupId,
         })
         .returning();
@@ -245,6 +248,7 @@ export async function updateProduct(id: string, formData: CreateProductPayload) 
           status: validated.status,
           priority: validated.priority,
           layoutTemplate: validated.layoutTemplate,
+          badges: validated.badges,
           groupId,
         })
         .where(eq(products.id, id))
@@ -417,6 +421,7 @@ export async function duplicateProduct(id: string) {
         status: "INACTIVE", // Másolatok mindig piszkozatként jöjjenek létre
         priority: originalProduct.priority,
         layoutTemplate: originalProduct.layoutTemplate,
+        badges: originalProduct.badges as { icon: string }[],
       }).returning();
 
       // 2. Variációk másolása
@@ -552,5 +557,72 @@ export async function deleteCategory(id: string) {
   } catch(error) {
     console.error("Hiba a kategória törlésekor:", error);
     return { success: false, error: "Nem sikerült törölni a kategóriát." };
+  }
+}
+
+export async function getBadgeIcons() {
+  try {
+    const badgesDir = path.join(process.cwd(), "public", "assets", "badges");
+    
+    if (!fs.existsSync(badgesDir)) {
+      return [];
+    }
+
+    const files = fs.readdirSync(badgesDir);
+    return files.filter(file => 
+      file.endsWith(".svg") || 
+      file.endsWith(".png") || 
+      file.endsWith(".jpg") || 
+      file.endsWith(".webp")
+    );
+  } catch (error) {
+    console.error("Hiba a badge ikonok beolvasásakor:", error);
+    return [];
+  }
+}
+
+export async function getAllBadgeSettings() {
+  try {
+    const settings = await db.select().from(badgeSettings);
+    return settings;
+  } catch (error) {
+    console.error("Hiba a badge beállítások lekérdezésekor:", error);
+    return [];
+  }
+}
+
+export async function upsertBadgeSettings(data: BadgeSettingsPayload) {
+  try {
+    const validated = badgeSettingsSchema.parse(data);
+    
+    const existing = await db
+      .select()
+      .from(badgeSettings)
+      .where(eq(badgeSettings.iconName, validated.iconName))
+      .limit(1);
+
+    if (existing.length > 0) {
+      await db
+        .update(badgeSettings)
+        .set({
+          tooltips: validated.tooltips,
+          updatedAt: new Date(),
+        })
+        .where(eq(badgeSettings.iconName, validated.iconName));
+    } else {
+      await db
+        .insert(badgeSettings)
+        .values({
+          iconName: validated.iconName,
+          tooltips: validated.tooltips,
+        });
+    }
+
+    revalidatePath("/admin/settings");
+    revalidatePath("/products");
+    return { success: true };
+  } catch (error) {
+    console.error("Hiba a badge beállítás mentésekor:", error);
+    return { success: false, error: "Nem sikerült menteni a beállítást." };
   }
 }

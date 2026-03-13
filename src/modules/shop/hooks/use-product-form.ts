@@ -54,6 +54,7 @@ export function useProductForm(initialData?: Partial<ProductFormValues>, product
       groupMode: "standalone" as const,
       selectedGroupId: undefined,
       newGroupName: { hu: "", en: "", sk: "" },
+      badges: [],
     },
   });
 
@@ -115,6 +116,14 @@ export function useProductForm(initialData?: Partial<ProductFormValues>, product
       categoryIds: values.categoryIds || [],
       selectedGroupId: values.groupMode === "join_group" ? values.selectedGroupId : undefined,
       newGroupName: values.groupMode === "new_group" ? values.newGroupName : undefined,
+      badges: values.badges.map(b => ({
+        icon: b.icon,
+        tooltip: {
+          hu: b.tooltip_hu || "",
+          en: b.tooltip_en || "",
+          sk: b.tooltip_sk || "",
+        }
+      })),
     };
 
     const result = productId 

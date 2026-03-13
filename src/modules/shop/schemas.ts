@@ -84,10 +84,13 @@ export const productFormSchema = z.object({
 
   status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
   priority: rhfNumberField.optional().default(0),
-  layoutTemplate: z.enum(["STANDARD", "VIDEO_CENTERED", "DOCUMENTARY"]).default("STANDARD"),
-  categoryIds: z.array(z.string().uuid()).optional().default([]),
-  // 3-utas termékcsalád mód
-  groupMode: z.enum(["standalone", "new_group", "join_group"]).default("standalone"),
+    layoutTemplate: z.enum(["STANDARD", "VIDEO_CENTERED", "DOCUMENTARY"]).default("STANDARD"),
+    categoryIds: z.array(z.string().uuid()).optional().default([]),
+    badges: z.array(z.object({
+      icon: z.string(),
+    })).max(3, "Maximum 3 badge választható!").default([]),
+    // 3-utas termékcsalád mód
+    groupMode: z.enum(["standalone", "new_group", "join_group"]).default("standalone"),
   // join_group módban: a kiválasztott csoport UUID-ja
   selectedGroupId: z.string().uuid().optional(),
   // new_group módban: az új csoport neve (többnyelvű) – feltételes validáció
@@ -206,6 +209,9 @@ export const createProductServerSchema = z.object({
   status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
   priority: z.number().optional().default(0),
   layoutTemplate: z.enum(["STANDARD", "VIDEO_CENTERED", "DOCUMENTARY"]).default("STANDARD"),
+  badges: z.array(z.object({
+    icon: z.string(),
+  })).max(3).optional().default([]),
 }).superRefine((data, ctx) => {
   // Szerveroldali biztonsági validáció fizikai termékeknél
   if (data.type === "physical") {
@@ -249,3 +255,14 @@ export const categoryServerSchema = z.object({
   parentId: z.string().uuid().optional().nullable().or(z.literal("")).or(z.literal("none")).transform(val => (val === "" || val === "none") ? null : val),
 });
 export type CategoryServerPayload = z.infer<typeof categoryServerSchema>;
+
+// --- 5. Badge Beállítások Séma ---
+export const badgeSettingsSchema = z.object({
+  iconName: z.string(),
+  tooltips: z.object({
+    hu: z.string().optional().default(""),
+    en: z.string().optional().default(""),
+    sk: z.string().optional().default(""),
+  }),
+});
+export type BadgeSettingsPayload = z.infer<typeof badgeSettingsSchema>;

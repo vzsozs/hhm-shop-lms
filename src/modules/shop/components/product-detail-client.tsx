@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ProductDetailItem } from "@/modules/shop/queries";
 import { Button } from "@/components/ui/button";
-import { Award, Shield, Star, Check, ExternalLink, ArrowLeft, Play, Pause, Volume2, VolumeX } from "lucide-react"; 
+import { Award, Check, ExternalLink, ArrowLeft, Play, Pause, Volume2, VolumeX } from "lucide-react";
 import { useRef, useEffect } from "react";
 import DOMPurify from "isomorphic-dompurify";
 import { Language } from "@/modules/shared/lib/i18n-constants";
@@ -386,17 +386,30 @@ export function ProductDetailClient({ product, lang }: { product: ProductDetailI
         <div className="w-full lg:w-[40%] text-brand-black relative z-10 lg:pl-10">
           <div className="lg:sticky lg:top-32 flex flex-row gap-4 lg:gap-6 font-montserrat">
             
-            {/* Dinamikus Badge Placeholder - Fentről lefelé a cím bal oldalán flexben */}
+            {/* Dinamikus Badge-ek */}
             <div className="flex flex-col gap-3 pt-2 shrink-0">
-              <div className="w-8 h-8 rounded-full border border-brand-bronze/30 flex items-center justify-center text-brand-brown bg-[#f8f7f5] shadow-sm transform hover:scale-110 transition-transform" title={t.premiumQuality}>
-                <Award className="w-4 h-4" />
-              </div>
-              <div className="w-8 h-8 rounded-full border border-brand-bronze/30 flex items-center justify-center text-brand-brown bg-[#f8f7f5] shadow-sm transform hover:scale-110 transition-transform" title={t.original}>
-                <Shield className="w-4 h-4" />
-              </div>
-              <div className="w-8 h-8 rounded-full border border-brand-bronze/30 flex items-center justify-center text-brand-brown bg-[#f8f7f5] shadow-sm transform hover:scale-110 transition-transform" title={t.featuredOffer}>
-                <Star className="w-4 h-4" />
-              </div>
+              {product.badges && product.badges.length > 0 && (
+                product.badges.map((badge, idx) => (
+                  <div 
+                    key={idx} 
+                    className="w-8 h-8 rounded-full border border-brand-bronze/30 flex items-center justify-center text-brand-brown bg-[#f8f7f5] shadow-sm transform hover:scale-110 transition-all group relative cursor-help overflow-visible" 
+                  >
+                    <div className="relative w-8 h-8 z-10 rounded-full overflow-hidden">
+                      <Image
+                        src={`/assets/badges/${badge.icon}`}
+                        alt={badge.icon}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    {/* Tooltip */}
+                    <div className="absolute left-full ml-3 px-3 py-1.5 bg-brand-black/90 backdrop-blur-md border border-brand-orange/30 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap pointer-events-none z-[60] shadow-xl uppercase tracking-wider font-bold">
+                      {badge.tooltip?.[lang] || badge.tooltip?.["hu"] || ""}
+                      <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-brand-orange/30" />
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
 
             {/* Fő Oszlop Tartalom */}
@@ -416,9 +429,11 @@ export function ProductDetailClient({ product, lang }: { product: ProductDetailI
                     </span>
                   ))}
                 </div>
-                <h1 className="font-montserrat text-lg lg:text-2xl font-bold text-brand-black tracking-widest uppercase leading-tight mb-4">
-                  {product.name[lang] || product.name["hu"] || t.unnamedProduct}
-                </h1>
+                <div className="flex flex-wrap items-center gap-4 mb-4">
+                  <h1 className="font-montserrat text-lg lg:text-2xl font-bold text-brand-black tracking-widest uppercase leading-tight">
+                    {product.name[lang] || product.name["hu"] || t.unnamedProduct}
+                  </h1>
+                </div>
                 <p className="text-brand-black/40 text-[11px] font-bold uppercase tracking-widest mb-4">
                   {t.skuPrefix}: {activeVariant?.sku || "–"}
                 </p>

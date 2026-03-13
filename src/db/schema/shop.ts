@@ -33,6 +33,7 @@ export const products = pgTable("products", {
   // FK → product_groups: SET NULL ha a csoport törlődik
   groupId: uuid("group_id").references(() => productGroups.id, { onDelete: "set null" }),
   ignoreTranslationWarnings: boolean("ignore_translation_warnings").default(false).notNull(),
+  badges: jsonb("badges").$type<{ icon: string }[]>().default([]).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({
@@ -129,4 +130,12 @@ export const syncLogs = pgTable("sync_logs", {
   errorSkus: jsonb("error_skus"), // Array of { sku, error }
   skippedSkus: jsonb("skipped_skus"), // Array of SKUs
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const badgeSettings = pgTable("badge_settings", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  iconName: varchar("icon_name", { length: 255 }).unique().notNull(),
+  tooltips: jsonb("tooltips").$type<Record<string, string>>().default({ hu: "", en: "", sk: "" }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

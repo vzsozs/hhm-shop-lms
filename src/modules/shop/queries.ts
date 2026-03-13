@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { products, productVariants, productMedia, productCategories, categories, productRecommendations, productAttachments, productGroups } from "@/db/schema";
+import { products, productVariants, productMedia, productCategories, categories, productRecommendations, productAttachments, productGroups, badgeSettings } from "@/db/schema";
 import { eq, and, sql, inArray, asc, desc } from "drizzle-orm";
 
 export type ProductListFilters = {
@@ -22,6 +22,7 @@ export type ProductListItem = {
   mainImageUrl: string | null;
   specifications: Record<string, unknown> | null;
   categories: { id: string; name: Record<string, string>; slug: Record<string, string> }[];
+  badges: { icon: string; tooltip: Record<string, string> }[];
 };
 
 export async function getActiveProducts(filters?: ProductListFilters): Promise<ProductListItem[]> {
@@ -68,6 +69,7 @@ export async function getActiveProducts(filters?: ProductListFilters): Promise<P
         LIMIT 1
       )`,
       specifications: products.specifications,
+      badges: products.badges,
       createdAt: products.createdAt,
     })
     .from(products)
@@ -128,14 +130,26 @@ export async function getActiveProducts(filters?: ProductListFilters): Promise<P
     }
   }
 
+  // Lekérjük a badge beállításokat is
+  const badgeSettingsData = await db.select().from(badgeSettings);
+  const badgeSettingsMap = new Map<string, Record<string, string>>();
+  badgeSettingsData.forEach((s) => {
+    badgeSettingsMap.set(s.iconName, s.tooltips as Record<string, string>);
+  });
+
   // Formázás és visszatérés
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return rawResults.map((r: any) => ({
     ...r,
     name: r.name as Record<string, string>,
     description: r.description as Record<string, string> | null,
     shortDescription: r.shortDescription as Record<string, string> | null,
     categories: categoriesMap.get(r.id) || [],
+    badges: ((r.badges || []) as { icon: string }[])
+      .filter(b => b && b.icon)
+      .map(b => ({
+        icon: b.icon,
+        tooltip: badgeSettingsMap.get(b.icon) || { hu: "", en: "", sk: "" }
+      })) as { icon: string; tooltip: Record<string, string> }[],
   }));
 }
 
@@ -206,6 +220,7 @@ export type ProductDetailItem = {
   categories: { id: string; name: Record<string, string>; slug: Record<string, string> }[];
   recommendations?: string[];
   attachments?: { id: string; url: string; name: string }[];
+  badges: { icon: string; tooltip: Record<string, string> }[];
   groupId: string | null;
   group?: { id: string; name: Record<string, string>; slug: Record<string, string> } | null;
   groupProducts?: { 
@@ -213,7 +228,8 @@ export type ProductDetailItem = {
     name: Record<string, string>; 
     slug: Record<string, string>; 
     shortDescription: Record<string, string> | null;
-    mainImageUrl: string | null 
+    mainImageUrl: string | null;
+    badges: { icon: string; tooltip: Record<string, string> }[];
   }[];
 };
 
@@ -229,7 +245,9 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
     return null;
   }
 
-  const [productVariantsData, productMediaData, productCategoriesData, groupData] = await Promise.all([
+
+
+  const results = await Promise.all([
     db.select().from(productVariants).where(eq(productVariants.productId, productData.id)),
     db.select().from(productMedia).where(eq(productMedia.productId, productData.id)).orderBy(asc(productMedia.order)),
     db
@@ -244,14 +262,22 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
     productData.groupId 
       ? db.select().from(productGroups).where(eq(productGroups.id, productData.groupId)).limit(1).then(r => r[0])
       : Promise.resolve(null),
+    db.select().from(badgeSettings),
   ]);
+
+  const [productVariantsData, productMediaData, productCategoriesData, groupData, badgeSettingsData] = results;
+  const badgeSettingsMap = new Map<string, Record<string, string>>();
+  badgeSettingsData.forEach((s) => {
+    badgeSettingsMap.set(s.iconName, s.tooltips as Record<string, string>);
+  });
 
   let groupProductsData: { 
     id: string; 
     name: Record<string, string>; 
     slug: Record<string, string>; 
     shortDescription: Record<string, string> | null;
-    mainImageUrl: string | null 
+    mainImageUrl: string | null;
+    badges: { icon: string; tooltip: Record<string, string> }[];
   }[] = [];
 
   if (productData.groupId) {
@@ -264,6 +290,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
         shortDescription: products.shortDescription,
         mediaUrl: productMedia.url,
         mediaOrder: productMedia.order,
+        badges: products.badges,
       })
       .from(products)
       .leftJoin(productMedia, and(eq(products.id, productMedia.productId), eq(productMedia.type, 'IMAGE')))
@@ -276,7 +303,8 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
       name: Record<string, string>; 
       slug: Record<string, string>; 
       shortDescription: Record<string, string> | null;
-      mainImageUrl: string | null 
+      mainImageUrl: string | null;
+      badges: { icon: string; tooltip: Record<string, string> }[];
     }>();
     for (const item of rawGroupData) {
       if (!grouped.has(item.id)) {
@@ -285,7 +313,12 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
           name: item.name as Record<string, string>,
           slug: item.slug as Record<string, string>,
           shortDescription: item.shortDescription as Record<string, string> | null,
-          mainImageUrl: item.mediaUrl
+          mainImageUrl: item.mediaUrl,
+          badges: ((item.badges || []) as unknown[]).map(b => {
+            if (typeof b === 'string') return { icon: b, tooltip: {} };
+            const badge = b as { icon: string; tooltip: Record<string, string> };
+            return { icon: badge.icon, tooltip: badge.tooltip || {} };
+          }) as { icon: string; tooltip: Record<string, string> }[],
         });
       }
     }
@@ -301,6 +334,12 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
     longDescription: productData.longDescription as Record<string, string> | null,
     specifications: productData.specifications as Record<string, unknown> | null,
     type: productData.type as "physical" | "digital",
+    badges: ((productData.badges || []) as { icon: string }[])
+      .filter(b => b && b.icon)
+      .map(b => ({
+        icon: b.icon,
+        tooltip: badgeSettingsMap.get(b.icon) || { hu: "", en: "", sk: "" }
+      })),
     variants: productVariantsData.map(v => ({
       id: v.id,
       sku: v.sku,
@@ -335,6 +374,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
       slug: gp.slug as Record<string, string>,
       shortDescription: gp.shortDescription as Record<string, string> | null,
       mainImageUrl: gp.mainImageUrl,
+      badges: gp.badges as { icon: string; tooltip: Record<string, string> }[],
     })),
   };
 }
@@ -422,6 +462,11 @@ export async function getProductById(id: string): Promise<ProductDetailItem | nu
       name: groupData.name as Record<string, string>,
       slug: groupData.slug as Record<string, string>,
     } : null,
+    badges: ((productData.badges || []) as unknown[]).map(b => {
+      if (typeof b === 'string') return { icon: b, tooltip: {} };
+      const badge = b as { icon: string; tooltip: Record<string, string> };
+      return { icon: badge.icon, tooltip: badge.tooltip || {} };
+    }) as { icon: string; tooltip: Record<string, string> }[],
   };
 }
 export type ProductSpec = {

@@ -31,6 +31,7 @@ import { Loader2, Plus, Trash2, ChevronUp, ChevronDown, Image as ImageIcon, Musi
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { productFormStyles as styles } from "./product-form.styles";
+import { getBadgeIcons } from "../actions";
 import dynamic from "next/dynamic";
 
 const RichTextEditor = dynamic(() => import("../../admin/components/RichTextEditor"), { 
@@ -70,6 +71,7 @@ export function ProductForm({ categories = [], products = [], productGroups = []
   });
   
   const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([]);
+  const [availableBadges, setAvailableBadges] = useState<string[]>([]);
   const objectUrlsRef = useRef<Set<string>>(new Set());
 
   // Cleanup memory on unmount for object URLs
@@ -78,6 +80,14 @@ export function ProductForm({ categories = [], products = [], productGroups = []
     return () => {
       activeUrls.forEach(url => URL.revokeObjectURL(url));
     };
+  }, []);
+
+  useEffect(() => {
+    const fetchBadges = async () => {
+      const badges = await getBadgeIcons();
+      setAvailableBadges(badges);
+    };
+    fetchBadges();
   }, []);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: "IMAGE" | "AUDIO" | "DOCUMENT") => {
@@ -708,6 +718,82 @@ export function ProductForm({ categories = [], products = [], productGroups = []
               </div>
             </div>
 
+            {/* Termék Badge-ek */}
+            <div className="mt-8 mb-4">
+              <FormField
+                control={form.control}
+                name="badges"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className={styles.sectionHeader}>
+                      <FormLabel className={styles.sectionTitle}>Termék Badge-ek (Maximum 3 db)</FormLabel>
+                    </div>
+                    
+                    {availableBadges.length > 0 ? (
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3 bg-admin-bg p-4 rounded-xl">
+                          {availableBadges.map((badgeIcon) => {
+                            const selectedIndex = field.value?.findIndex(b => b.icon === badgeIcon);
+                            const isSelected = selectedIndex !== -1;
+                            
+                            return (
+                              <div 
+                                key={badgeIcon}
+                                onClick={() => {
+                                  let newValue = [...(field.value || [])];
+                                  if (isSelected) {
+                                    newValue = newValue.filter(b => b.icon !== badgeIcon);
+                                  } else {
+                                    if (newValue.length < 3) {
+                                      newValue.push({ 
+                                        icon: badgeIcon 
+                                      });
+                                    } else {
+                                      return;
+                                    }
+                                  }
+                                  field.onChange(newValue);
+                                }}
+                                className={`relative aspect-square rounded-xl border-2 flex items-center justify-center cursor-pointer transition-all hover:scale-105 ${
+                                  isSelected 
+                                    ? "border-brand-orange bg-brand-orange/10 shadow-[0_0_10px_rgba(255,107,0,0.2)]" 
+                                    : "border-white/5 bg-white/5 hover:border-white/20"
+                                }`}
+                                title={badgeIcon}
+                              >
+                                <div className="relative w-8 h-8">
+                                  <Image
+                                    src={`/assets/badges/${badgeIcon}`}
+                                    alt={badgeIcon}
+                                    fill
+                                    className="object-contain"
+                                  />
+                                </div>
+                                {isSelected && (
+                                  <div className="absolute -top-1 -right-1 bg-brand-orange text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold shadow-lg">
+                                    {(selectedIndex as number) + 1}
+                                  </div>
+                                )}
+                                <div className="absolute -bottom-5 left-0 right-0 overflow-hidden text-center">
+                                  <span className="text-[10px] text-white/40 truncate block px-1">
+                                    {badgeIcon}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-admin-bg p-6 rounded-xl border border-dashed border-white/10 text-center">
+                        <p className="text-sm text-white/40">Nincsenek elérhető badge-ek a `public/assets/badges` mappában.</p>
+                      </div>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             {/* Ajánlott Termékek */}
             {products.length > 0 && (

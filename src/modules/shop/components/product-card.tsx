@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ProductListItem } from "@/modules/shop/queries";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Download, Package } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 
 export function ProductCard({ product, lang }: { product: ProductListItem; lang: string }) {
@@ -94,12 +94,25 @@ export function ProductCard({ product, lang }: { product: ProductListItem; lang:
           </div>
         )}
         
-        {/* Típus Badge Ikonnal */}
-        <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm p-2 flex items-center justify-center text-brand-brown rounded-full shadow-sm border border-brand-bronze/20 z-20">
-          {product.type === "digital" ? (
-             <Download className="w-4 h-4" />
-          ) : (
-             <Package className="w-4 h-4" />
+        {/* Badge-ek (Dinamikus) */}
+        <div className="absolute top-3 right-3 flex flex-row gap-2 z-20">
+          {product.badges && product.badges.length > 0 && (
+            product.badges.map((badge, idx) => (
+              <div 
+                key={idx} 
+                className="w-8 h-8 bg-white/90 backdrop-blur-sm flex items-center justify-center text-brand-brown rounded-full shadow-sm border border-brand-bronze/20 transform hover:scale-110 transition-transform overflow-hidden"
+                title={badge.tooltip?.[lang] || badge.tooltip?.["hu"] || ""}
+              >
+                <div className="relative w-full h-full">
+                  <Image
+                    src={`/assets/badges/${badge.icon}`}
+                    alt={badge.icon}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+            ))
           )}
         </div>
       </div>

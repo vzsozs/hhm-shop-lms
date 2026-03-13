@@ -118,11 +118,6 @@ export function useProductForm(initialData?: Partial<ProductFormValues>, product
       newGroupName: values.groupMode === "new_group" ? values.newGroupName : undefined,
       badges: values.badges.map(b => ({
         icon: b.icon,
-        tooltip: {
-          hu: b.tooltip_hu || "",
-          en: b.tooltip_en || "",
-          sk: b.tooltip_sk || "",
-        }
       })),
     };
 

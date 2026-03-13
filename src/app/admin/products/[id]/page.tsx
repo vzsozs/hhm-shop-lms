@@ -83,11 +83,8 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
       url: a.url,
       name: a.name
     })),
-    badges: ((productData.badges as { icon: string; tooltip: Record<string, string> }[]) || []).map(b => ({
+    badges: ((productData.badges as { icon: string }[]) || []).map(b => ({
       icon: b.icon,
-      tooltip_hu: b.tooltip?.hu || "",
-      tooltip_en: b.tooltip?.en || "",
-      tooltip_sk: b.tooltip?.sk || "",
     }))
   };
 

@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, integer, decimal, jsonb, pgEnum, AnyPgColumn, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, integer, decimal, jsonb, pgEnum, AnyPgColumn, index, boolean } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 
 // Enumok a terméktípusokhoz, mediákhoz és rendelés státuszokhoz
@@ -32,6 +32,7 @@ export const products = pgTable("products", {
   layoutTemplate: varchar("layout_template", { length: 100 }).default("STANDARD").notNull(),
   // FK → product_groups: SET NULL ha a csoport törlődik
   groupId: uuid("group_id").references(() => productGroups.id, { onDelete: "set null" }),
+  ignoreTranslationWarnings: boolean("ignore_translation_warnings").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({

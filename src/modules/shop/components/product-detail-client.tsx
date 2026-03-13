@@ -5,17 +5,35 @@ import Link from "next/link";
 import Image from "next/image";
 import { ProductDetailItem } from "@/modules/shop/queries";
 import { Button } from "@/components/ui/button";
-import { Award, Shield, Star, Check, ExternalLink, ArrowLeft } from "lucide-react"; 
+import { Award, Shield, Star, Check, ExternalLink, ArrowLeft, Play, Pause, Volume2, VolumeX } from "lucide-react"; 
+import { useRef, useEffect } from "react";
 import DOMPurify from "isomorphic-dompurify";
 export function ProductDetailClient({ product }: { product: ProductDetailItem }) {
   const [activeTab, setActiveTab] = useState<"specs" | "look">("specs");
   const [activeImageId, setActiveImageId] = useState(product.media[0]?.id);
   const [activeVariantId, setActiveVariantId] = useState(product.variants[0]?.id);
   
+  // Audio Player State
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+      audioRef.current.muted = isMuted;
+    }
+  }, [volume, isMuted]);
+
   const activeImage = product.media.find(m => m.id === activeImageId) || product.media[0];
+  const audioMedia = product.media.find(m => m.type === "AUDIO");
+  const visualMedia = product.media.filter(m => m.type !== "AUDIO");
   const activeVariant = product.variants.find(v => v.id === activeVariantId) || product.variants[0];
 
-  const priceHuf = activeVariant?.priceHuf ? new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF' }).format(activeVariant.priceHuf) : null;
+  const priceHuf = activeVariant?.priceHuf ? new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 0 }).format(activeVariant.priceHuf) : null;
   const priceEur = activeVariant?.priceEur ? new Intl.NumberFormat('sk-SK', { style: 'currency', currency: 'EUR' }).format(activeVariant.priceEur) : null;
 
   // Segédfüggvény [szöveg](url) parsolásához
@@ -41,12 +59,71 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
     });
   };
 
+  const getYouTubeVideoId = (url: string) => {
+    if (!url) return null;
+    let videoId = "";
+    if (url.includes("v=")) {
+      videoId = url.split("v=")[1]?.split("&")[0];
+    } else if (url.includes("youtu.be/")) {
+      videoId = url.split("youtu.be/")[1]?.split("?")[0];
+    } else if (url.includes("/embed/")) {
+      videoId = url.split("/embed/")[1]?.split("?")[0];
+    }
+    return videoId || null;
+  };
+
+  const getYouTubeEmbedUrl = (url: string) => {
+    const videoId = getYouTubeVideoId(url);
+    return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+  };
+
+  const getYouTubeThumbnail = (url: string) => {
+    const videoId = getYouTubeVideoId(url);
+    return videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null;
+  };
+
   const sanitizedLongDescription = product.longDescription?.hu 
     ? DOMPurify.sanitize(product.longDescription.hu, { 
         ADD_ATTR: ["target", "rel"],
         FORBID_TAGS: ["script", "style", "iframe"],
       }) 
     : null;
+
+  const toggleSidebarPlay = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const onTimeUpdate = () => {
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime);
+    }
+  };
+
+  const onLoadedMetadata = () => {
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration);
+    }
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const time = Number(e.target.value);
+    setCurrentTime(time);
+    if (audioRef.current) {
+      audioRef.current.currentTime = time;
+    }
+  };
+
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  };
   return (
     <div className="relative min-h-screen bg-brand-lightbg pt-12 pb-24">
       {/* Background Mandala Container - Fixes sticky overflow issue */}
@@ -73,31 +150,46 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
         <div className="w-full lg:w-[60%] flex flex-col gap-8">
           {/* Fő Kép és Galéria */}
           <div className="flex flex-col gap-4">
-            <div className="w-full aspect-square bg-[#f3ede8] rounded-2xl overflow-hidden relative border border-brand-bronze/10">
+            <div className="w-full aspect-square bg-[#ffffff] rounded-2xl overflow-hidden relative border border-brand-bronze/10">
               {activeImage?.url ? (
-                <Image 
-                  src={activeImage.url} 
-                  alt={product.name["hu"] || "Termék kép"} 
-                  fill 
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 60vw"
-                  priority
-                />
+                activeImage.type === "YOUTUBE" ? (
+                  <iframe 
+                    src={getYouTubeEmbedUrl(activeImage.url) || ""}
+                    className="absolute inset-0 w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    title="Product Video"
+                  />
+                ) : (
+                  <Image 
+                    src={activeImage.url} 
+                    alt={product.name["hu"] || "Termék kép"} 
+                    fill 
+                    className="object-contain"
+                    sizes="(max-width: 768px) 100vw, 60vw"
+                    priority
+                  />
+                )
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center text-brand-black/40 font-montserrat">Nincs kép</div>
               )}
             </div>
             
             {/* Thumbnails */}
-            {product.media.length > 1 && (
+            {visualMedia.length > 1 && (
               <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-                {product.media.map(media => (
+                {visualMedia.map(media => (
                   <button 
                     key={media.id}
                     onClick={() => setActiveImageId(media.id)}
                     className={`relative w-24 h-24 shrink-0 rounded-xl overflow-hidden border-2 transition-all ${activeImageId === media.id ? 'border-brand-bronze shadow-md' : 'border-transparent opacity-70 hover:opacity-100'}`}
                   >
-                    <Image src={media.url} alt="Thumbnail" fill className="object-cover" />
+                    <Image 
+                      src={media.type === "YOUTUBE" ? getYouTubeThumbnail(media.url) || media.url : media.url} 
+                      alt="Thumbnail" 
+                      fill 
+                      className="object-contain" 
+                    />
                     {media.type === "YOUTUBE" && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                         <div className="w-8 h-8 rounded-full bg-white/80 flex items-center justify-center">
@@ -109,18 +201,6 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
                 ))}
               </div>
             )}
-          </div>
-
-          {/* Long Description */}
-          <div className="bg-white/60 backdrop-blur-md rounded-2xl p-6 lg:p-10 border border-brand-bronze/20 shadow-sm mt-4">
-            <h2 className="text-3xl font-cormorant font-bold text-brand-brown mb-6 uppercase tracking-widest">Részletes leírás</h2>
-            <div className="prose prose-stone max-w-none font-montserrat text-brand-black/80 leading-loose">
-              {sanitizedLongDescription ? (
-                 <div dangerouslySetInnerHTML={{ __html: sanitizedLongDescription }} />
-              ) : (
-                <p className="italic">Nincs elérhető leírás ehhez a termékhez.</p>
-              )}
-            </div>
           </div>
 
           {/* Tabs: Specs & Look */}
@@ -145,20 +225,35 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
                 <div>
                    {Array.isArray(product.specifications) && product.specifications.length > 0 ? (
                      <ul className="space-y-4">
-                       {(product.specifications as Array<Record<string, string>>).map((spec, i) => {
-                         const key = spec.key_hu || spec.key_en || `Jellemző ${i + 1}`;
-                         const val = spec.value_hu || spec.value_en || "–";
-                         return (
-                           <li key={i} className="flex gap-3 items-center">
-                             <div className="w-6 h-6 rounded-full bg-brand-bronze/20 flex items-center justify-center shrink-0">
-                               <Check className="w-3.5 h-3.5 text-brand-brown" />
-                             </div>
-                             <div className="flex-1">
-                              <strong>{key}:</strong> {renderValueWithLinks(val)}
-                            </div>
-                           </li>
-                         );
-                       })}
+                       {(() => {
+                         const specs = product.specifications as Array<{ key_hu: string; key_en: string; value_hu: string; value_en: string }>;
+                         // USP-ket előre, a többit utána
+                         const sortedSpecs = [...specs].sort((a, b) => {
+                           const aIsUsp = a.key_en?.startsWith("USP") || a.key_hu?.startsWith("USP");
+                           const bIsUsp = b.key_en?.startsWith("USP") || b.key_hu?.startsWith("USP");
+                           if (aIsUsp && !bIsUsp) return -1;
+                           if (!aIsUsp && bIsUsp) return 1;
+                           return 0;
+                         });
+
+                         return sortedSpecs.map((spec, i) => {
+                           const isUsp = spec.key_en?.startsWith("USP") || spec.key_hu?.startsWith("USP");
+                           const key = spec.key_hu || spec.key_en || `Jellemző ${i + 1}`;
+                           const val = spec.value_hu || spec.value_en || "–";
+                           
+                           return (
+                             <li key={i} className="flex gap-3 items-center">
+                               <div className="w-6 h-6 rounded-full bg-brand-bronze/20 flex items-center justify-center shrink-0">
+                                 <Check className="w-3.5 h-3.5 text-brand-brown" />
+                               </div>
+                               <div className="flex-1 text-sm font-medium">
+                                 {!isUsp && <strong className="text-brand-brown">{key}: </strong>}
+                                 {renderValueWithLinks(val)}
+                               </div>
+                             </li>
+                           );
+                         });
+                       })()}
                      </ul>
                    ) : (
                      <p className="italic text-brand-black/50">Nincsenek specifikációk rögzítve.</p>
@@ -189,6 +284,19 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
                 </div>
               )}
             </div>
+
+            {/* Long Description */}
+            <div className="bg-white/60 backdrop-blur-md rounded-2xl p-6 lg:p-10 border border-brand-bronze/20 shadow-sm mt-4">
+              <h2 className="text-3xl font-cormorant font-bold text-brand-brown mb-6 uppercase tracking-widest">Részletes leírás</h2>
+              <div className="prose prose-stone max-w-none font-montserrat text-brand-black/80 leading-loose">
+                {sanitizedLongDescription ? (
+                  <div dangerouslySetInnerHTML={{ __html: sanitizedLongDescription }} />
+                ) : (
+                  <p className="italic">Nincs elérhető leírás ehhez a termékhez.</p>
+                )}
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -229,6 +337,9 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
                 <h1 className="font-montserrat text-lg lg:text-2xl font-bold text-brand-black tracking-widest uppercase leading-tight mb-4">
                   {product.name["hu"] || "Terméknév"}
                 </h1>
+                <p className="text-brand-black/40 text-[11px] font-bold uppercase tracking-widest mb-4">
+                  Cikkszám: {activeVariant?.sku || "–"}
+                </p>
               </div>
 
             {/* Felső Rövid Ismertető Pipa Pontokkal */}
@@ -246,7 +357,7 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
                    })}
                  </div>
               ) : (
-                 <p className="text-sm italic">Nincs megadva rövid ismertető.</p>
+                 <p className="text-sm italic"></p>
               )}
             </div>
 
@@ -259,19 +370,34 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
                </div>
 
                {/* Specifikációk kistábla formátumban */}
+               {/* USP-k vagy Specifikációk kistábla formátumban */}
                {Array.isArray(product.specifications) && product.specifications.length > 0 && (
                  <div className="flex flex-col gap-0.5 mt-2 text-xs text-brand-black">
-                   {(product.specifications as Array<Record<string, string>>).slice(0, 3).map((spec, i) => {
-                     const key = spec.key_hu || spec.key_en || `Jellemző ${i + 1}`;
-                     const val = spec.value_hu || spec.value_en || "–";
-                     return (
-                       <div key={i} className="flex gap-2 items-center">
-                         <Award className="w-3.5 h-3.5 text-brand-black/60 shrink-0" />
-                         <span className="capitalize text-brand-black/60">{key}:</span>
-                         <span className="font-bold">{renderValueWithLinks(val)}</span>
-                       </div>
-                     );
-                   })}
+                   {(() => {
+                     const specs = product.specifications as Array<{ key_en: string; key_hu: string; value_en: string; value_hu: string }>;
+                     const usps = specs.filter(s => s.key_en?.startsWith("USP") || s.key_hu?.startsWith("USP")).slice(0, 5);
+                     
+                     if (usps.length > 0) {
+                       return usps.map((usp, i) => (
+                         <div key={i} className="flex gap-2 items-center">
+                           <Check className="w-3.5 h-3.5 text-brand-black/60 shrink-0" />
+                           <span className="font-bold">{renderValueWithLinks(usp.value_hu || usp.value_en)}</span>
+                         </div>
+                       ));
+                     }
+
+                     return specs.slice(0, 3).map((spec, i) => {
+                       const key = spec.key_hu || spec.key_en || `Jellemző ${i + 1}`;
+                       const val = spec.value_hu || spec.value_en || "–";
+                       return (
+                         <div key={i} className="flex gap-2 items-center">
+                           <Award className="w-3.5 h-3.5 text-brand-black/60 shrink-0" />
+                           <span className="capitalize text-brand-black/60">{key}:</span>
+                           <span className="font-bold">{renderValueWithLinks(val)}</span>
+                         </div>
+                       );
+                     });
+                   })()}
                  </div>
                )}
             </div>
@@ -282,6 +408,62 @@ export function ProductDetailClient({ product }: { product: ProductDetailItem })
                 Kosárba rakom
               </Button>
             </div>
+
+            {/* Audio Player Component */}
+            {audioMedia && (
+              <div className="mt-4 p-4 bg-white/60 backdrop-blur-md rounded-xl border border-brand-bronze/10 shadow-sm flex flex-col gap-3">
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={toggleSidebarPlay}
+                    className="w-10 h-10 rounded-full bg-brand-bronze text-white flex items-center justify-center hover:scale-105 transition-transform shadow-sm"
+                  >
+                    {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
+                  </button>
+                  
+                  <div className="flex-1 flex flex-col gap-1">
+                    <span className="text-[10px] font-bold text-brand-bronze uppercase tracking-widest">Hangminta hallgatása</span>
+                    <input 
+                      type="range"
+                      min="0"
+                      max={duration || 0}
+                      value={currentTime}
+                      onChange={handleSeek}
+                      className="w-full h-1.5 bg-brand-bronze/20 rounded-lg appearance-none cursor-pointer accent-brand-bronze"
+                    />
+                    <div className="flex justify-between text-[9px] font-medium text-brand-black/60">
+                      <span>{formatTime(currentTime)}</span>
+                      <span>{formatTime(duration)}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pl-2 border-l border-brand-bronze/10">
+                    <button onClick={() => setIsMuted(!isMuted)} className="text-brand-brown/60 hover:text-brand-brown">
+                      {isMuted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                    </button>
+                    <input 
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={isMuted ? 0 : volume}
+                      onChange={(e) => setVolume(Number(e.target.value))}
+                      className="w-12 h-1 bg-brand-bronze/20 rounded-lg appearance-none cursor-pointer accent-brand-bronze hidden sm:block"
+                    />
+                  </div>
+                </div>
+                
+                <audio 
+                  ref={audioRef}
+                  src={audioMedia.url}
+                  onTimeUpdate={onTimeUpdate}
+                  onLoadedMetadata={onLoadedMetadata}
+                  onEnded={() => setIsPlaying(false)}
+                  muted={isMuted}
+                  autoPlay={false}
+                  className="hidden"
+                />
+              </div>
+            )}
 
             {/* Termékcsalád tagjai (Kártyás megjelenítés) */}
             {product.groupProducts && product.groupProducts.length > 1 && (

@@ -20,6 +20,7 @@ export type ProductListItem = {
   minPriceHuf: number | null;
   minPriceEur: number | null;
   mainImageUrl: string | null;
+  specifications: Record<string, unknown> | null;
   categories: { id: string; name: Record<string, string>; slug: Record<string, string> }[];
 };
 
@@ -66,6 +67,7 @@ export async function getActiveProducts(filters?: ProductListFilters): Promise<P
         ORDER BY "order" ASC
         LIMIT 1
       )`,
+      specifications: products.specifications,
       createdAt: products.createdAt,
     })
     .from(products)
@@ -269,7 +271,13 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
       .orderBy(asc(products.id), asc(productMedia.order));
 
     // Group by product id to take the first image for each
-    const grouped = new Map<string, any>();
+    const grouped = new Map<string, { 
+      id: string; 
+      name: Record<string, string>; 
+      slug: Record<string, string>; 
+      shortDescription: Record<string, string> | null;
+      mainImageUrl: string | null 
+    }>();
     for (const item of rawGroupData) {
       if (!grouped.has(item.id)) {
         grouped.set(item.id, {
@@ -414,5 +422,168 @@ export async function getProductById(id: string): Promise<ProductDetailItem | nu
       name: groupData.name as Record<string, string>,
       slug: groupData.slug as Record<string, string>,
     } : null,
+  };
+}
+export type ProductSpec = {
+  key_hu: string;
+  value_hu: string;
+  key_en?: string;
+  value_en?: string;
+  key_sk?: string;
+  value_sk?: string;
+  [key: string]: string | undefined;
+};
+
+export type TranslationStatusItem = {
+  id: string;
+  nameHu: string;
+  missingLanguages: ("hu" | "en" | "sk")[];
+  missingAreas: string[];
+  readiness: number;
+  ignoreTranslationWarnings: boolean;
+};
+
+export type TranslationStatusResult = {
+  items: TranslationStatusItem[];
+  totalCount: number;
+};
+
+export async function getTranslationStatusProducts(filters: { 
+  langMissing?: "hu" | "en" | "sk" | "all", 
+  page: number, 
+  limit: number 
+}): Promise<TranslationStatusResult> {
+  const offset = (filters.page - 1) * filters.limit;
+
+  // We fetch ACTIVE products
+  // We need name, shortDescription, longDescription, group, categories, specifications
+  const baseQuery = db
+    .select({
+      id: products.id,
+      name: products.name,
+      shortDescription: products.shortDescription,
+      longDescription: products.longDescription,
+      specifications: products.specifications,
+      ignoreTranslationWarnings: products.ignoreTranslationWarnings,
+      groupName: productGroups.name,
+      categoryNames: sql<Record<string, string>[]>`COALESCE(jsonb_agg(${categories.name}) FILTER (WHERE ${categories.id} IS NOT NULL), '[]'::jsonb)`,
+    })
+    .from(products)
+    .leftJoin(productGroups, eq(products.groupId, productGroups.id))
+    .leftJoin(productCategories, eq(products.id, productCategories.productId))
+    .leftJoin(categories, eq(productCategories.categoryId, categories.id))
+    .where(eq(products.status, "ACTIVE"))
+    .groupBy(products.id, productGroups.id);
+
+  const rawResults = await baseQuery;
+
+  // Now we filter and process in memory because complex JSONB readiness logic is hard in Drizzle/SQL cross-platform
+  // and we want precise control over the rules.
+  // Note: For very large datasets, some of this should move to SQL (at least the missing lang filtering).
+  
+  const processedItems: TranslationStatusItem[] = rawResults.map(row => {
+    const name = (row.name || {}) as Record<string, string>;
+    const shortDesc = (row.shortDescription || {}) as Record<string, string>;
+    const longDesc = (row.longDescription || {}) as Record<string, string>;
+    const groupName = (row.groupName || {}) as Record<string, string>;
+    const catNames = (row.categoryNames || []) as Record<string, string>[];
+    const specs = (row.specifications || []) as ProductSpec[];
+
+    const langs: ("hu" | "en" | "sk")[] = ["hu", "en", "sk"];
+    const missingLangs: ("hu" | "en" | "sk")[] = [];
+    const missingAreas = new Set<string>();
+
+    // Readiness calculation
+    let totalCheckpoints = 0;
+    let completedCheckpoints = 0;
+
+    // Critical fields
+    langs.forEach(l => {
+      totalCheckpoints++;
+      if (name[l]?.trim()) completedCheckpoints++; else { missingLangs.push(l); missingAreas.add("NAME"); }
+      
+      totalCheckpoints++;
+      if (shortDesc[l]?.trim()) completedCheckpoints++; else { missingLangs.push(l); missingAreas.add("DESC"); }
+      
+      totalCheckpoints++;
+      if (longDesc[l]?.trim()) completedCheckpoints++; else { missingLangs.push(l); missingAreas.add("DESC"); }
+    });
+
+    // Important fields: Group
+    if (Object.values(groupName).some(v => !!v)) {
+      langs.forEach(l => {
+        totalCheckpoints++;
+        if (groupName[l]?.trim()) completedCheckpoints++; else { missingLangs.push(l); missingAreas.add("GROUP"); }
+      });
+    }
+
+    // Important fields: Categories
+    if (catNames.length > 0) {
+      catNames.forEach(cat => {
+        if (!cat) return;
+        langs.forEach(l => {
+          totalCheckpoints++;
+          if (cat[l]?.trim()) completedCheckpoints++; else { missingLangs.push(l); missingAreas.add("CAT"); }
+        });
+      });
+    }
+
+    // Marketing (USPs) & Technical (Specs)
+    // Rule: only if exists in any language
+    specs.forEach(s => {
+      if (!s) return;
+      const isUSP = ["USP", "USP2", "USP3", "USP4", "USP5"].includes(s.key_hu);
+      const area = isUSP ? "USP" : "SPECS";
+      
+      langs.forEach(l => {
+        const val = s[`value_${l}`];
+        totalCheckpoints++;
+        if (val?.trim()) completedCheckpoints++; else { 
+          missingLangs.push(l); 
+          missingAreas.add(area); 
+        }
+      });
+    });
+
+    const uniqueMissingLangs = Array.from(new Set(missingLangs));
+    const readiness = totalCheckpoints > 0 ? Math.round((completedCheckpoints / totalCheckpoints) * 100) : 100;
+
+    return {
+      id: row.id,
+      nameHu: name.hu || "Névtelen",
+      missingLanguages: uniqueMissingLangs,
+      missingAreas: Array.from(missingAreas),
+      readiness,
+      ignoreTranslationWarnings: row.ignoreTranslationWarnings,
+    };
+  });
+
+  // Apply filters
+  let filteredItems = processedItems;
+  if (filters.langMissing === "all") {
+    // "Mind hiányzik" filter: products where all 3 languages have gaps
+    filteredItems = processedItems.filter(item => item.missingLanguages.length === 3);
+  } else if (filters.langMissing && ["hu", "en", "sk"].includes(filters.langMissing)) {
+    const targetLang = filters.langMissing as "hu" | "en" | "sk";
+    filteredItems = processedItems.filter(item => item.missingLanguages.includes(targetLang));
+  } else {
+    // Default: show everything that has at least one missing lang
+    filteredItems = processedItems.filter(item => item.missingLanguages.length > 0);
+  }
+
+  // Final total count for pagination
+  const totalCount = filteredItems.length;
+  
+  // Sort: ignored items to the bottom, then by readiness
+  filteredItems.sort((a, b) => {
+    if (a.ignoreTranslationWarnings !== b.ignoreTranslationWarnings) {
+      return a.ignoreTranslationWarnings ? 1 : -1;
+    }
+    return a.readiness - b.readiness;
+  });
+
+  return {
+    items: filteredItems.slice(offset, offset + filters.limit),
+    totalCount,
   };
 }

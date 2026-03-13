@@ -75,8 +75,6 @@ const SPEC_EXCLUDE = [
   "Youtube ID 1", "Youtube Embed Code 1", "Youtube ID 2", "Youtube Embed Code 2", "Youtube ID 3", "Youtube Embed Code 3",
   "Product group", "Product group2", "Product group3", "Product group4", "Product group5",
   "Media Folder", "Specs (all)", "Media URL",
-  "USP 1", "USP 2", "USP 3", "USP 4", "USP 5", "USP 6", "USP 7", "USP 8", "USP 9", "USP 10",
-  "USP1", "USP2", "USP3", "USP4", "USP5", "USP6", "USP7", "USP8", "USP9", "USP10",
   "Feature 1", "Feature 2", "Feature 3", "Feature 4", "Feature 5", "Feature 6", "Feature 7", "Feature 8", "Feature 9", "Feature 10",
   "Feature1", "Feature2", "Feature3", "Feature4", "Feature5", "Feature6", "Feature7", "Feature8", "Feature9", "Feature10",
 ];
@@ -203,7 +201,7 @@ export async function syncMeinlData(fileBuffer: Buffer): Promise<SyncResult> {
         });
       };
 
-      const nameEn = String(row["Product Name"] || "");
+      const nameEn = String(row["Product Name"] || "").replace(/^MEINL Sonic Energy\s+/, "");
       const descEn = cleanHTML(String(row["Product Description"] || ""));
 
       // USP és Feature összefűzése

@@ -39,6 +39,7 @@ export default async function HomePage({
       <div className="w-full mb-10">
         <Suspense fallback={<div className="h-[72px] w-full bg-white/40 animate-pulse rounded-2xl border border-brand-bronze/20" />}>
           <ProductFilters 
+            key={categoryId || 'all'}
             initialSearch={search} 
             initialType={type} 
             initialCategoryId={categoryId} 

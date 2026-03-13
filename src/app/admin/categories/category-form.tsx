@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
@@ -61,14 +61,18 @@ export function CategoryForm({ initialData, categories, onSuccess, onCancel }: C
 
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categoryFormSchema),
-    defaultValues,
+    defaultValues: defaultValues as CategoryFormValues,
   });
 
   // Figyeljük a magyar nevet, és automatikusan generáljuk a slug-ot, ha le van zárva
-  const nameHu = form.watch("name_hu");
+  const nameHu = useWatch({
+    control: form.control,
+    name: "name_hu",
+  });
+
   useEffect(() => {
     if (isSlugLocked && nameHu) {
-      // Csak generálunk, ha újat hozunk létre vagy engedélyezték (viszont ha locked, és szerkesztünk, a meglévő is módosul, ha átírja a nevét)
+      // Csak generálunk, ha újat hozunk létre vagy engedélyezték
       form.setValue("slug", generateCategorySlug(nameHu), { shouldValidate: true });
     }
   }, [nameHu, isSlugLocked, form]);

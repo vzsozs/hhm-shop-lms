@@ -1,6 +1,7 @@
 import { StatCard } from "@/components/admin/stat-card";
 import { DollarSign, ShoppingCart, Users, TrendingUp, PackagePlus, UserPlus, Image as ImageIcon, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { db } from "@/db";
 import { products, productVariants, productMedia, categories, productCategories } from "@/db/schema/shop";
 import { eq, getTableColumns, sql, desc } from "drizzle-orm";
@@ -134,8 +135,13 @@ export default async function AdminDashboardPage() {
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 bg-white/10 rounded-lg flex items-center justify-center text-white/30 shrink-0 overflow-hidden relative">
                           {product.image ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={product.image} alt={nameHu} className="object-cover w-full h-full" />
+                            <Image 
+                              src={product.image} 
+                              alt={nameHu} 
+                              fill
+                              className="object-cover" 
+                              sizes="40px"
+                            />
                           ) : (
                             <ImageIcon size={20} />
                           )}

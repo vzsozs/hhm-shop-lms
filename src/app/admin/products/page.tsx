@@ -8,12 +8,16 @@ import { ProductTableClient } from "./product-table-client";
 
 import { db } from "@/db";
 import { products, productVariants, productMedia, productCategories, categories } from "@/db/schema/shop";
-import { eq, getTableColumns, sql, desc, asc } from "drizzle-orm";
+import { eq, getTableColumns, sql, desc, asc, and } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminProductsPage({ searchParams }: { searchParams: Promise<{ sort?: string, order?: string }> }) {
-  const { sort, order } = await searchParams;
+export default async function AdminProductsPage({ 
+  searchParams 
+}: { 
+  searchParams: Promise<{ sort?: string, order?: string, q?: string }> 
+}) {
+  const { sort, order, q } = await searchParams;
   const isDesc = order === "desc";
 
   // Alapértelmezett rendezés
@@ -34,6 +38,15 @@ export default async function AdminProductsPage({ searchParams }: { searchParams
   } else if (sort === "status") {
     orderByClause = isDesc ? desc(products.status) : asc(products.status);
   }
+  // Szűrési feltételek
+  const conditions = [];
+  if (q) {
+    const term = `%${q}%`;
+    conditions.push(
+      sql`${products.name}->>'hu' ILIKE ${term} OR ${products.name}->>'en' ILIKE ${term} OR ${products.name}->>'sk' ILIKE ${term}`
+    );
+  }
+
   // Lekérdezzük a termékeket, első képet, kategóriákat és összesített készletet/árat
   const productsList = await db
     .select({
@@ -54,6 +67,7 @@ export default async function AdminProductsPage({ searchParams }: { searchParams
     .leftJoin(productMedia, eq(products.id, productMedia.productId))
     .leftJoin(productCategories, eq(products.id, productCategories.productId))
     .leftJoin(categories, eq(productCategories.categoryId, categories.id))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
     .groupBy(products.id)
     .orderBy(orderByClause);
 

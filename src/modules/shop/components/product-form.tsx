@@ -551,8 +551,7 @@ export function ProductForm({ categories = [], products = [], productGroups = []
                               
                               {m.type === "IMAGE" && (
                                 <div className="h-10 w-10 relative rounded overflow-hidden">
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img src={m.localUrl} alt="local preview" className="object-cover w-full h-full opacity-50" />
+                                  <Image src={m.localUrl} alt="local preview" fill className="object-cover opacity-50" unoptimized />
                                 </div>
                               )}
 

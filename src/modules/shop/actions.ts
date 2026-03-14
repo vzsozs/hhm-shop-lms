@@ -8,18 +8,7 @@ import fs from "fs";
 import path from "path";
 import { badgeSettingsSchema, BadgeSettingsPayload, createProductServerSchema, CreateProductPayload, ProductGroupServerPayload, productGroupServerSchema } from "./schemas";
 import { eq, sql } from "drizzle-orm";
-
-// Csoport-slug generálás
-function generateGroupSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9\s-]/g, "")
-    .trim()
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
-}
+import { ensureUniqueSlug, generateSlug } from "@/lib/utils/slug";
 
 // Named Group létrehozása a product_groups táblában (tranzakción belül)
 async function createProductGroupHelper(
@@ -27,9 +16,9 @@ async function createProductGroupHelper(
   name: Record<string, string>
 ): Promise<string> {
   const slug = {
-    hu: generateGroupSlug(name.hu || ""),
-    en: name.en ? generateGroupSlug(name.en) : "",
-    sk: name.sk ? generateGroupSlug(name.sk) : "",
+    hu: await ensureUniqueSlug(generateSlug(name.hu || ""), "hu", "product_groups", tx),
+    en: name.en ? await ensureUniqueSlug(generateSlug(name.en), "en", "product_groups", tx) : "",
+    sk: name.sk ? await ensureUniqueSlug(generateSlug(name.sk), "sk", "product_groups", tx) : "",
   };
   const [group] = await tx
     .insert(productGroups)
@@ -56,48 +45,18 @@ async function cleanupOrphanGroup(
   }
 }
 
-// SEO-barát slug generáló a termék nevéből
-function generateSlug(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9\s-]/g, "")
-    .trim()
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
-}
-
-// Ha a slug már létezik, egyedi suffix hozzáadása (-2, -3, stb.)
-// Optimized: egyetlen DB-hívással kéri le az összes érintő slugot
-async function ensureUniqueSlug(baseSlug: string, lang: string, excludeId?: string): Promise<string> {
-  const existing = await db.execute(
-    sql`SELECT slug->>${lang} as slug_val FROM products WHERE slug->>${lang} LIKE ${baseSlug + '%'} ${excludeId ? sql`AND id != ${excludeId}` : sql``}`
-  );
-
-  const takenSlugs = new Set(existing.map((r) => (r as { slug_val: string }).slug_val));
-
-  if (!takenSlugs.has(baseSlug)) return baseSlug;
-
-  let counter = 2;
-  while (takenSlugs.has(`${baseSlug}-${counter}`)) {
-    counter++;
-  }
-  return `${baseSlug}-${counter}`;
-}
-
 export async function createProduct(formData: CreateProductPayload) {
   try {
     const validated = createProductServerSchema.parse(formData);
 
-    // Multilingual Slugs generálása
-    const slug = {
-      hu: await ensureUniqueSlug(generateSlug(validated.name.hu), "hu"),
-      en: validated.name.en ? await ensureUniqueSlug(generateSlug(validated.name.en), "en") : "",
-      sk: validated.name.sk ? await ensureUniqueSlug(generateSlug(validated.name.sk), "sk") : "",
-    };
-
     const result = await db.transaction(async (tx) => {
+      // Multilingual Slugs generálása
+      const slug = {
+        hu: await ensureUniqueSlug(generateSlug(validated.name.hu), "hu", "products", tx),
+        en: validated.name.en ? await ensureUniqueSlug(generateSlug(validated.name.en), "en", "products", tx) : "",
+        sk: validated.name.sk ? await ensureUniqueSlug(generateSlug(validated.name.sk), "sk", "products", tx) : "",
+      };
+
       // 1. Named Group ID kezelése
       let groupId: string | null = null;
 
@@ -432,13 +391,14 @@ export async function duplicateProduct(id: string) {
       sk: originalName.sk ? `${originalName.sk} (Kópia)` : "",
     };
 
-    const slug = {
-      hu: await ensureUniqueSlug(generateSlug(newName.hu), "hu"),
-      en: newName.en ? await ensureUniqueSlug(generateSlug(newName.en), "en") : "",
-      sk: newName.sk ? await ensureUniqueSlug(generateSlug(newName.sk), "sk") : "",
-    };
-
     const result = await db.transaction(async (tx) => {
+      // Új alap adatok és módosított slug
+      const slug = {
+        hu: await ensureUniqueSlug(generateSlug(newName.hu), "hu", "products", tx),
+        en: newName.en ? await ensureUniqueSlug(generateSlug(newName.en), "en", "products", tx) : "",
+        sk: newName.sk ? await ensureUniqueSlug(generateSlug(newName.sk), "sk", "products", tx) : "",
+      };
+
       // 1. Új Termék
       const [newProduct] = await tx.insert(products).values({
         slug,
@@ -519,22 +479,6 @@ export async function duplicateProduct(id: string) {
   }
 }
 
-import { generateCategorySlug } from "@/lib/utils";
-
-async function ensureUniqueCategorySlug(baseSlug: string, excludeId?: string): Promise<string> {
-  let slug = baseSlug;
-  let counter = 2;
-  while (true) {
-    const existing = await db.execute(
-      sql`SELECT id FROM categories WHERE slug->>'hu' = ${slug} ${excludeId ? sql`AND id != ${excludeId}` : sql``} LIMIT 1`
-    );
-    
-    if (existing.length === 0) break;
-    slug = `${baseSlug}-${counter}`;
-    counter++;
-  }
-  return slug;
-}
 
 import { categories } from "@/db/schema/shop";
 import { CategoryServerPayload, categoryServerSchema } from "./schemas";
@@ -542,33 +486,35 @@ import { CategoryServerPayload, categoryServerSchema } from "./schemas";
 export async function upsertCategory(formData: CategoryServerPayload) {
   try {
     const validated = categoryServerSchema.parse(formData);
-    const baseSlug = generateCategorySlug(validated.slug.hu || validated.name.hu);
-    const slugHu = await ensureUniqueCategorySlug(baseSlug, validated.id);
-    const slug = { ...validated.slug, hu: slugHu };
-
-    if (validated.id) {
-      // Update
-      await db.update(categories)
-        .set({
-          name: validated.name as Record<string, string>,
-          description: validated.description as Record<string, string>,
-          slug: slug as Record<string, string>,
-          parentId: validated.parentId,
-        })
-        .where(eq(categories.id, validated.id));
-    } else {
-      // Create
-      await db.insert(categories)
-        .values({
-          name: validated.name as Record<string, string>,
-          description: validated.description as Record<string, string>,
-          slug: slug as Record<string, string>,
-          parentId: validated.parentId,
-        });
-    }
+    const result = await db.transaction(async (tx) => {
+      const baseSlug = generateSlug(validated.slug.hu || validated.name.hu);
+      const slugHu = await ensureUniqueSlug(baseSlug, "hu", "categories", tx, validated.id);
+      const slug = { ...validated.slug, hu: slugHu };
+      if (validated.id) {
+        // Update
+        await tx.update(categories)
+          .set({
+            name: validated.name as Record<string, string>,
+            description: validated.description as Record<string, string>,
+            slug: slug as Record<string, string>,
+            parentId: validated.parentId,
+          })
+          .where(eq(categories.id, validated.id));
+      } else {
+        // Create
+        await tx.insert(categories)
+          .values({
+            name: validated.name as Record<string, string>,
+            description: validated.description as Record<string, string>,
+            slug: slug as Record<string, string>,
+            parentId: validated.parentId,
+          });
+      }
+      return { success: true };
+    });
 
     revalidatePath("/admin/categories");
-    return { success: true };
+    return result;
   } catch (error) {
     console.error("Hiba a kategória mentésekor:", error);
     if (error instanceof z.ZodError) {

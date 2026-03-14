@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useSearchParams, usePathname } from "next/navigation";
+import Image from "next/image";
+import { useSearchParams, usePathname, useRouter } from "next/navigation";
+import { useDebouncedCallback } from "use-debounce";
 import Link from "next/link";
 import { 
   Table, 
@@ -28,13 +30,13 @@ import { deleteProducts, updateProductsStatus } from "@/modules/shop/actions";
 
 interface ProductListItem {
   id: string;
-  name: any; // Name is a Record<string, string> in JSONB
+  name: Record<string, string>; // { hu: string, en: string, sk: string }
   createdAt: string | Date;
   status: "ACTIVE" | "INACTIVE";
   priority: number;
   image?: string | null;
   price: number;
-  categoryName?: any; // JSONB category name
+  categoryName?: Record<string, string>; // JSONB category name
 }
 
 interface ProductTableClientProps {
@@ -69,15 +71,33 @@ const SortLink = ({ column, children, align = "left", currentSort, currentOrder,
 };
 
 export function ProductTableClient({ products }: ProductTableClientProps) {
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isPending, startTransition] = useTransition();
   const searchParams = useSearchParams();
   const searchParamsObj = new URLSearchParams(searchParams.toString());
   const pathname = usePathname();
+  const router = useRouter();
 
+  const q = searchParams.get("q") || "";
   const sort = searchParams.get("sort");
   const order = searchParams.get("order");
+
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState(q);
+  const [isPending, startTransition] = useTransition();
+
+  const debouncedSearch = useDebouncedCallback((value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) {
+      params.set("q", value);
+    } else {
+      params.delete("q");
+    }
+    router.push(`${pathname}?${params.toString()}`);
+  }, 300);
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    debouncedSearch(value);
+  };
 
   const toggleSelectAll = () => {
     if (selectedIds.length === products.length && products.length > 0) {
@@ -125,10 +145,6 @@ export function ProductTableClient({ products }: ProductTableClientProps) {
     });
   };
 
-  const filteredProducts = products.filter(product => {
-    const nameHu = (product.name as Record<string, string>)?.hu?.toLowerCase() || "";
-    return nameHu.includes(searchTerm.toLowerCase());
-  });
 
   return (
     <div className="space-y-4">
@@ -200,7 +216,8 @@ export function ProductTableClient({ products }: ProductTableClientProps) {
                     <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-brand-orange transition-colors" />
                     <Input                       
                       value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onChange={(e) => handleSearchChange(e.target.value)}
+                      placeholder="Keresés..."
                       className="h-6 pl-6 bg-white/5 border-white/10 text-xxs focus:border-brand-orange/50 focus:ring-brand-orange/20 transition-all rounded-l"
                     />
                   </div>
@@ -225,7 +242,7 @@ export function ProductTableClient({ products }: ProductTableClientProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredProducts.map((product) => {
+            {products.map((product) => {
               const nameHu = (product.name as Record<string, string>)?.hu || "Névtelen";
               const catNameHu = product.categoryName?.hu || "Nincs kategória";
               const priceDisp = product.price ? product.price.toLocaleString("hu-HU") : "0";
@@ -248,8 +265,13 @@ export function ProductTableClient({ products }: ProductTableClientProps) {
                   <TableCell>
                     <div className="h-10 w-10 bg-white/10 rounded-lg flex items-center justify-center text-white/30 shrink-0 overflow-hidden relative">
                       {product.image ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={product.image} alt={nameHu} className="object-cover w-full h-full" />
+                        <Image 
+                          src={product.image} 
+                          alt={nameHu} 
+                          fill 
+                          className="object-cover"
+                          sizes="40px"
+                        />
                       ) : (
                         <ImageIcon size={20} />
                       )}
@@ -275,10 +297,10 @@ export function ProductTableClient({ products }: ProductTableClientProps) {
                 </TableRow>
               );
             })}
-            {filteredProducts.length === 0 && (
+            {products.length === 0 && (
               <TableRow>
                 <TableCell colSpan={9} className="h-24 text-center text-white/50">
-                  Nincsenek termékek az adatbázisban.
+                  {searchTerm ? "Nincs a keresésnek megfelelő termék." : "Nincsenek termékek az adatbázisban."}
                 </TableCell>
               </TableRow>
             )}

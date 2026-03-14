@@ -1,4 +1,5 @@
 import { pgTable, uuid, varchar, timestamp, integer, decimal, jsonb, pgEnum, AnyPgColumn, index, boolean } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { users } from "./auth";
 
 // Enumok a terméktípusokhoz, mediákhoz és rendelés státuszokhoz
@@ -10,21 +11,25 @@ export const orderStatusEnum = pgEnum("order_status", ["pending", "paid", "shipp
 // Nevesített termékcsaládok táblája (pl. "Meinl Sonic Energy sorozat")
 export const productGroups = pgTable("product_groups", {
   id: uuid("id").defaultRandom().primaryKey(),
-  name: jsonb("name").notNull(), // { hu: string, en: string, sk: string }
-  slug: jsonb("slug").notNull(), // { hu: string, en: string, sk: string }
+  name: jsonb("name").$type<Record<string, string>>().notNull(), // { hu: string, en: string, sk: string }
+  slug: jsonb("slug").$type<Record<string, string>>().notNull(), // { hu: string, en: string, sk: string }
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const productGroupsRelations = relations(productGroups, ({ many }) => ({
+  products: many(products),
+}));
+
 export const products = pgTable("products", {
   id: uuid("id").defaultRandom().primaryKey(),
   // SEO-barát, egyedi URL azonosító (pl. "nagy-kezmuves-hangtal")
-  slug: jsonb("slug").notNull(), // { hu: string, en: string, sk: string }
-  name: jsonb("name").notNull(), // { hu: string, en: string, sk: string }
+  slug: jsonb("slug").$type<Record<string, string>>().notNull(), // { hu: string, en: string, sk: string }
+  name: jsonb("name").$type<Record<string, string>>().notNull(), // { hu: string, en: string, sk: string }
   brand: varchar("brand", { length: 255 }),
-  description: jsonb("description"), // { hu: string, en: string, sk: string }
-  shortDescription: jsonb("short_description"), // { hu: string, en: string, sk: string }
-  longDescription: jsonb("long_description"), // { hu: string, en: string, sk: string }
+  description: jsonb("description").$type<Record<string, string>>(), // { hu: string, en: string, sk: string }
+  shortDescription: jsonb("short_description").$type<Record<string, string>>(), // { hu: string, en: string, sk: string }
+  longDescription: jsonb("long_description").$type<Record<string, string>>(), // { hu: string, en: string, sk: string }
   specifications: jsonb("specifications"), // Dinamikus JSONB specifikációk (kulcs-érték párok)
   type: productTypeEnum("type").default("physical").notNull(),
   status: productStatusEnum("status").default("ACTIVE").notNull(),
@@ -40,10 +45,22 @@ export const products = pgTable("products", {
   groupIdIdx: index("products_group_id_idx").on(table.groupId),
 }));
 
+export const productsRelations = relations(products, ({ one, many }) => ({
+  group: one(productGroups, {
+    fields: [products.groupId],
+    references: [productGroups.id],
+  }),
+  variants: many(productVariants),
+  media: many(productMedia),
+  attachments: many(productAttachments),
+  recommendations: many(productRecommendations, { relationName: "recommendations" }),
+  categories: many(productCategories),
+}));
+
 export const productVariants = pgTable("product_variants", {
   id: uuid("id").defaultRandom().primaryKey(),
   productId: uuid("product_id").references(() => products.id, { onDelete: 'cascade' }).notNull(),
-  name: jsonb("name"), // Variáció neve (pl. { hu: "Közepes méret" })
+  name: jsonb("name").$type<Record<string, string>>(), // Variáció neve (pl. { hu: "Közepes méret" })
   sku: varchar("sku", { length: 100 }).unique().notNull(), // MuFis-hoz kötelező!
   priceHuf: integer("price_huf").notNull(), // Főként forint alapú árazás
   priceEur: decimal("price_eur", { precision: 10, scale: 2 }).notNull(), // Kerekítések miatt decimal
@@ -54,10 +71,30 @@ export const productVariants = pgTable("product_variants", {
   depth: decimal("depth", { precision: 10, scale: 2 }),
 });
 
+export const productVariantsRelations = relations(productVariants, ({ one }) => ({
+  product: one(products, {
+    fields: [productVariants.productId],
+    references: [products.id],
+  }),
+}));
+
 export const productRecommendations = pgTable("product_recommendations", {
   productId: uuid("product_id").references(() => products.id, { onDelete: 'cascade' }).notNull(),
   recommendedProductId: uuid("recommended_product_id").references(() => products.id, { onDelete: 'cascade' }).notNull(),
 });
+
+export const productRecommendationsRelations = relations(productRecommendations, ({ one }) => ({
+  product: one(products, {
+    fields: [productRecommendations.productId],
+    references: [products.id],
+    relationName: "recommendations",
+  }),
+  recommendedProduct: one(products, {
+    fields: [productRecommendations.recommendedProductId],
+    references: [products.id],
+    relationName: "recommendedBy",
+  }),
+}));
 
 export const productAttachments = pgTable("product_attachments", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -65,6 +102,13 @@ export const productAttachments = pgTable("product_attachments", {
   url: varchar("url", { length: 500 }).notNull(),
   name: varchar("name", { length: 255 }).notNull(),
 });
+
+export const productAttachmentsRelations = relations(productAttachments, ({ one }) => ({
+  product: one(products, {
+    fields: [productAttachments.productId],
+    references: [products.id],
+  }),
+}));
 
 export const productMedia = pgTable("product_media", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -77,6 +121,13 @@ export const productMedia = pgTable("product_media", {
 }, (table) => ({
   // Compound index az ORDER BY product_id, order lekérdezések gyorsításához
   productIdOrderIdx: index("product_media_product_id_order_idx").on(table.productId, table.order),
+}));
+
+export const productMediaRelations = relations(productMedia, ({ one }) => ({
+  product: one(products, {
+    fields: [productMedia.productId],
+    references: [products.id],
+  }),
 }));
 
 export const orders = pgTable("orders", {
@@ -109,15 +160,36 @@ export const coupons = pgTable("coupons", {
 export const categories = pgTable("categories", {
   id: uuid("id").defaultRandom().primaryKey(),
   parentId: uuid("parent_id").references((): AnyPgColumn => categories.id, { onDelete: 'set null' }),
-  name: jsonb("name").notNull(), // { hu: string, en: string, sk: string }
-  description: jsonb("description"), // { hu: string, en: string, sk: string }
-  slug: jsonb("slug").notNull(), // { hu: string, en: string, sk: string }
+  name: jsonb("name").$type<Record<string, string>>().notNull(), // { hu: string, en: string, sk: string }
+  description: jsonb("description").$type<Record<string, string>>(), // { hu: string, en: string, sk: string }
+  slug: jsonb("slug").$type<Record<string, string>>().notNull(), // { hu: string, en: string, sk: string }
 });
+
+export const categoriesRelations = relations(categories, ({ one, many }) => ({
+  parent: one(categories, {
+    fields: [categories.parentId],
+    references: [categories.id],
+    relationName: "parent_to_children",
+  }),
+  children: many(categories, { relationName: "parent_to_children" }),
+  productCategories: many(productCategories),
+}));
 
 export const productCategories = pgTable("product_categories", {
   productId: uuid("product_id").references(() => products.id, { onDelete: 'cascade' }).notNull(),
   categoryId: uuid("category_id").references(() => categories.id, { onDelete: 'cascade' }).notNull(),
 });
+
+export const productCategoriesRelations = relations(productCategories, ({ one }) => ({
+  product: one(products, {
+    fields: [productCategories.productId],
+    references: [products.id],
+  }),
+  category: one(categories, {
+    fields: [productCategories.categoryId],
+    references: [categories.id],
+  }),
+}));
 
 export const syncLogs = pgTable("sync_logs", {
   id: uuid("id").defaultRandom().primaryKey(),

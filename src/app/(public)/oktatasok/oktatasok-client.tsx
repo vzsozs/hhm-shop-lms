@@ -10,7 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-/* eslint-disable @next/next/no-img-element */
 
 interface ContentDict {
   heroTitle: string;
@@ -248,7 +247,7 @@ export function OktatasokClient({ trainings }: { trainings: Training[] }) {
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
             <div className="inline-block mb-4">
-              <img src="/assets/PalAdri-logo-stroke.svg" alt="Logo" className="h-12 w-auto opacity-30" />
+              <Image src="/assets/PalAdri-logo-stroke.svg" alt="Logo" width={96} height={48} className="h-12 w-auto opacity-30" />
             </div>
             <h2 className="font-cormorant text-3xl md:text-4xl text-brand-brown font-bold uppercase tracking-widest">
               {t.sectionTitle}
@@ -462,7 +461,7 @@ export function OktatasokClient({ trainings }: { trainings: Training[] }) {
           
           <div className="mt-20 text-center">
              <div className="inline-block mb-12">
-                <img src="/assets/PalAdri-logo-stroke.svg" alt="Logo" className="h-12 w-auto opacity-20 mx-auto mb-4" />
+                <Image src="/assets/PalAdri-logo-stroke.svg" alt="Logo" width={96} height={48} className="h-12 w-auto opacity-20 mx-auto mb-4" />
                 <p className="text-[10px] uppercase tracking-[0.3em] text-brand-black/40">© HangAkadémia® – Minden jog fenntartva.</p>
              </div>
           </div>

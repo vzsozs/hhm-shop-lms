@@ -1,6 +1,6 @@
-/* eslint-disable @next/next/no-img-element */
 'use client';
 
+import Image from 'next/image';
 import { useLanguage } from '../../../context/language-context';
 import { Language } from '../../../modules/shared/lib/i18n-constants';
 import { Award, Heart, Shield, Sparkles, Star, LucideIcon } from 'lucide-react';
@@ -127,10 +127,12 @@ export default function AboutPage() {
       {/* Hero Section */}
       <section className="relative h-[70vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
-          <img 
+          <Image 
             src="/images/bg.webp" 
             alt="Hero Background" 
-            className="w-full h-full object-cover opacity-30"
+            fill
+            priority
+            className="object-cover opacity-30"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-brand-white/0 via-brand-white/20 to-brand-white"></div>
         </div>
@@ -138,10 +140,13 @@ export default function AboutPage() {
         <div className="container relative z-10 px-4 text-center max-w-4xl">
           <div className="mb-8 flex justify-center">
             <div className="relative w-48 h-48 md:w-64 md:h-64 rounded-full border-4 border-brand-bronze overflow-hidden shadow-2xl animate-in zoom-in duration-1000">
-               <img 
+               <Image 
                  src="/images/Ardi1.webp" 
                  alt="Pál Adrienn" 
-                 className="w-full h-full object-cover"
+                 fill
+                 priority
+                 className="object-cover"
+                 sizes="(max-width: 768px) 192px, 256px"
                />
             </div>
           </div>
@@ -171,7 +176,7 @@ export default function AboutPage() {
       <section className="py-24 px-4">
         <div className="container max-w-4xl mx-auto">
           <div className="flex justify-center mb-12">
-            <img src="/images/PalAdri-logo-stroke.svg" alt="Logo" className="w-16 h-16 opacity-30" />
+            <Image src="/images/PalAdri-logo-stroke.svg" alt="Logo" width={64} height={64} className="opacity-30" />
           </div>
           <h2 className="font-cormorant text-4xl md:text-5xl text-brand-brown text-center font-bold mb-16">
             {t.story.title}
@@ -189,11 +194,13 @@ export default function AboutPage() {
       <section className="py-24 bg-brand-bronze/5">
         <div className="container px-4 max-w-7xl mx-auto">
            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-              <div className="relative group overflow-hidden rounded-3xl shadow-2xl">
-                 <img 
+              <div className="relative group overflow-hidden rounded-3xl shadow-2xl aspect-[3/2]">
+                 <Image 
                    src="/images/Meinl-ambassador.webp" 
                    alt="Meinl Sonic Energy" 
-                   className="w-full h-auto transition-transform duration-700 group-hover:scale-105"
+                   fill
+                   className="object-cover transition-transform duration-700 group-hover:scale-105"
+                   sizes="(max-width: 1024px) 100vw, 50vw"
                  />
                  <div className="absolute inset-0 ring-1 ring-inset ring-brand-brown/10 rounded-3xl"></div>
               </div>
@@ -238,10 +245,18 @@ export default function AboutPage() {
       <section className="py-24 px-4 bg-brand-brown text-white">
         <div className="container max-w-7xl mx-auto">
            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <img src="/images/Hangtalas_kepek01.webp" className="w-full h-64 object-cover rounded-xl opacity-80 hover:opacity-100 transition-opacity" alt="Gallery 1" />
-              <img src="/images/Hangtalas_kepek02.webp" className="w-full h-64 object-cover rounded-xl opacity-80 hover:opacity-100 transition-opacity" alt="Gallery 2" />
-              <img src="/images/Hangtalas_kepek03.webp" className="w-full h-64 object-cover rounded-xl opacity-80 hover:opacity-100 transition-opacity" alt="Gallery 3" />
-              <img src="/images/Hangtalas_kepek04.webp" className="w-full h-64 object-cover rounded-xl opacity-80 hover:opacity-100 transition-opacity" alt="Gallery 4" />
+              <div className="relative h-64 overflow-hidden rounded-xl">
+                <Image src="/images/Hangtalas_kepek01.webp" fill className="object-cover opacity-80 hover:opacity-100 transition-opacity" alt="Gallery 1" sizes="(max-width: 768px) 50vw, 25vw" />
+              </div>
+              <div className="relative h-64 overflow-hidden rounded-xl">
+                <Image src="/images/Hangtalas_kepek02.webp" fill className="object-cover opacity-80 hover:opacity-100 transition-opacity" alt="Gallery 2" sizes="(max-width: 768px) 50vw, 25vw" />
+              </div>
+              <div className="relative h-64 overflow-hidden rounded-xl">
+                <Image src="/images/Hangtalas_kepek03.webp" fill className="object-cover opacity-80 hover:opacity-100 transition-opacity" alt="Gallery 3" sizes="(max-width: 768px) 50vw, 25vw" />
+              </div>
+              <div className="relative h-64 overflow-hidden rounded-xl">
+                <Image src="/images/Hangtalas_kepek04.webp" fill className="object-cover opacity-80 hover:opacity-100 transition-opacity" alt="Gallery 4" sizes="(max-width: 768px) 50vw, 25vw" />
+              </div>
            </div>
            <div className="mt-16 text-center">
               <a 

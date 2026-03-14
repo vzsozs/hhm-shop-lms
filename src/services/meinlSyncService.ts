@@ -5,6 +5,7 @@ import * as XLSX from "xlsx";
 import DOMPurify from "isomorphic-dompurify";
 import { MEINL_SYNC_CONFIG } from "@/config/meinl-sync";
 import chunk from "lodash.chunk";
+import { generateSlug } from "@/lib/utils/slug";
 
 type InsertProduct = typeof products.$inferInsert;
 type InsertProductVariant = typeof productVariants.$inferInsert;
@@ -60,16 +61,6 @@ const SPEC_EXCLUDE = [
   "Feature1", "Feature2", "Feature3", "Feature4", "Feature5", "Feature6", "Feature7", "Feature8", "Feature9", "Feature10",
 ];
 
-function generateSlug(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9\s-]/g, "")
-    .trim()
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
-}
 
 function parseMeinlFloat(value: unknown): number {
   if (value === null || value === undefined || value === "") return 0;

@@ -1,7 +1,7 @@
-/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { X, ChevronLeft, ChevronRight, Search as ZoomIn } from 'lucide-react';
 import { useLanguage } from '../../../context/language-context';
 import { Language } from '../../../modules/shared/lib/i18n-constants';
@@ -98,10 +98,12 @@ export default function GalleryPage() {
             className="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-brand-bronze/5 cursor-pointer shadow-sm hover:shadow-xl transition-all duration-500 border border-brand-bronze/10"
             onClick={() => openLightbox(index)}
           >
-            <img 
+            <Image 
               src={img.src} 
               alt={img.alt} 
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              fill
+              className="object-cover transition-transform duration-700 group-hover:scale-110"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
             />
             <div className="absolute inset-0 bg-brand-brown/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center">
                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
@@ -133,11 +135,14 @@ export default function GalleryPage() {
           </button>
 
           <div className="relative max-w-5xl w-full h-full flex items-center justify-center">
-            <img 
+            <Image 
               src={GALLERY_IMAGES[selectedImage].src} 
               alt={GALLERY_IMAGES[selectedImage].alt} 
-              className="max-w-full max-h-full object-contain shadow-2xl animate-in zoom-in-95 duration-300"
+              fill
+              className="object-contain shadow-2xl animate-in zoom-in-95 duration-300"
               onClick={(e) => e.stopPropagation()}
+              sizes="100vw"
+              priority
             />
           </div>
 

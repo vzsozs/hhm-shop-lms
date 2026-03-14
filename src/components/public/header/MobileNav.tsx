@@ -36,17 +36,24 @@ export const MobileNav: React.FC<MobileNavProps> = ({
         <div className="absolute left-0 top-[-20px] h-[113px] w-full -z-10 backdrop-blur-[3px] overflow-hidden">
           <Image src="/assets/menu-mobile.svg" alt="" fill className="mix-blend-normal object-cover object-top" />
         </div>
-        <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 z-50 relative border border-white/20 rounded-full bg-brand-white/50 backdrop-blur-sm">
+        <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 z-[110] relative border border-white/20 rounded-full bg-brand-white/50 backdrop-blur-sm">
           {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
         
-        <div className="relative flex justify-center flex-1">
-          <Link href="/" className="absolute top-[20px] left-1/2 -ml-[-32px] -translate-x-1/2 z-50">
-            <Image src="/assets/PalAdri-logo-2023-Vegleges-vilagos.svg" alt="Hangakadémia" height={160} width={240} priority className="h-[160px] w-auto drop-shadow-md" />
+        <div className="relative flex justify-center flex-1 h-[100px]">
+          <Link href="/" className="absolute top-[20px] left-[calc(50%+30px)] -translate-x-1/2 z-[110] w-[150px]">
+            <Image 
+              src="/assets/PalAdri-logo-2023-Vegleges-vilagos.svg" 
+              alt="Hangakadémia" 
+              height={100} 
+              width={150} 
+              priority 
+              className="h-full w-full object-contain drop-shadow-md" 
+            />
           </Link>
         </div>
         
-        <div className="flex items-center gap-2 z-50">
+        <div className="flex items-center gap-2 z-[110]">
           <div className="relative">
             <button 
               onClick={() => setLangOpen(!langOpen)}
@@ -55,7 +62,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
               {language}
             </button>
             {langOpen && (
-              <div className="absolute top-[42px] right-0 flex flex-col items-center bg-brand-bronze/90 backdrop-blur-md border border-white/10 rounded-xl py-1 shadow-2xl overflow-hidden min-w-[50px] z-[60]">
+              <div className="absolute top-[42px] right-0 flex flex-col items-center bg-brand-bronze/90 backdrop-blur-md border border-white/10 rounded-xl py-1 shadow-2xl overflow-hidden min-w-[50px] z-[120]">
                 {SUPPORTED_LANGUAGES.map((lang) => (
                   <button 
                     key={lang} 
@@ -79,10 +86,10 @@ export const MobileNav: React.FC<MobileNavProps> = ({
 
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
-        <div className="absolute top-[0px] left-0 w-full bg-brand-bronze/98 backdrop-blur-xl p-6 pt-24 flex flex-col gap-4 shadow-xl z-[60] text-brand-white h-screen overflow-y-auto">
+        <div className="absolute top-[0px] left-0 w-full bg-brand-bronze/98 backdrop-blur-xl p-6 pt-24 flex flex-col gap-4 shadow-xl z-[120] text-brand-white h-screen overflow-y-auto">
           <button 
             onClick={() => setMobileMenuOpen(false)}
-            className="absolute top-4 left-4 p-2 z-[70] border border-white/20 rounded-full bg-brand-bronze/50 backdrop-blur-sm"
+            className="absolute top-4 left-4 p-2 z-[130] border border-white/20 rounded-full bg-brand-bronze/50 backdrop-blur-sm"
           >
             <X size={24} />
           </button>

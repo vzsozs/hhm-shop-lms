@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { useLanguage } from '../../../context/language-context';
 import { Language } from '../../../modules/shared/lib/i18n-constants';
-import { Award, Heart, Shield, Sparkles, Star, LucideIcon } from 'lucide-react';
+import { Award, Heart, Shield, Sparkles, LucideIcon } from 'lucide-react';
 
 export default function AboutPage() {
   const { language } = useLanguage();
@@ -12,7 +12,6 @@ export default function AboutPage() {
     hero: {
       title: string;
       subtitle: string;
-      quote: string;
       caption: string;
     };
     story: {
@@ -27,15 +26,14 @@ export default function AboutPage() {
       items: {
         title: string;
         text: string;
-        icon: LucideIcon;
+        icon: LucideIcon | string;
       }[];
     };
   }> = {
     hu: {
       hero: {
         title: "Pál Adrienn",
-        subtitle: "Test és lélek harmóniája",
-        quote: "\"Hangok érintése a belső egyensúlyért.\"",
+        subtitle: "Test és lélek harmóniája:\n\"Hangok érintése a belső egyensúlyért.\"",
         caption: "Nemzetközi Himalájai Hangtálmasszázs® oktató • A Hangakadémia® alapítója\nA Meinl Sonic Energy magyarországi szakmai nagykövete"
       },
       story: {
@@ -56,15 +54,14 @@ export default function AboutPage() {
           { title: "Hitelesség", text: "Több mint 18 év tapasztalat a hangtálak világában.", icon: Award as LucideIcon },
           { title: "Szakmaiság", text: "Nemzetközi oktatói és egészségügyi háttér.", icon: Shield as LucideIcon },
           { title: "Holisztikus szemlélet", text: "Test, lélek és szellem egysége.", icon: Heart as LucideIcon },
-          { title: "Minőség", text: "A Meinl Sonic Energy hivatalos képviselete.", icon: Star as LucideIcon }
+          { title: "Minőség", text: "A Meinl Sonic Energy hivatalos képviselete.", icon: "/assets/badges/ico-meinl.svg" }
         ]
       }
     },
     en: {
       hero: {
         title: "Adrienn Pál",
-        subtitle: "Harmony of Body and Soul",
-        quote: "\"The touch of sounds for inner balance.\"",
+        subtitle: "Harmony of Body and Soul:\n\"The touch of sounds for inner balance.\"",
         caption: "International Himalayan Singing Bowl Massage® Instructor • Founder of Hangakadémia®\nProfessional Ambassador of Meinl Sonic Energy in Hungary"
       },
       story: {
@@ -85,15 +82,14 @@ export default function AboutPage() {
           { title: "Authenticity", text: "More than 18 years of experience in the world of singing bowls.", icon: Award as LucideIcon },
           { title: "Professionalism", text: "International instructor and health background.", icon: Shield as LucideIcon },
           { title: "Holistic Approach", text: "Unity of body, soul, and spirit.", icon: Heart as LucideIcon },
-          { title: "Quality", text: "Official representation of Meinl Sonic Energy.", icon: Star as LucideIcon }
+          { title: "Quality", text: "Official representation of Meinl Sonic Energy.", icon: "/assets/badges/ico-meinl.svg" }
         ]
       }
     },
     sk: {
       hero: {
         title: "Adrienn Pál",
-        subtitle: "Harmónia tela a duše",
-        quote: "\"Dotyk zvukov pre vnútornú rovnováhu.\"",
+        subtitle: "Harmónia tela a duše:\n\"Dotyk zvukov pre vnútornú rovnováhu.\"",
         caption: "Medzinárodná inštruktorka masáže himalájskymi spievajúcimi misami® • Zakladateľka Hangakadémia®\nOdborná ambasadorka Meinl Sonic Energy v Maďarsku"
       },
       story: {
@@ -114,7 +110,7 @@ export default function AboutPage() {
           { title: "Autentickosť", text: "Viac ako 18 rokov skúseností vo svete spievajúcich mís.", icon: Award as LucideIcon },
           { title: "Profesionalita", text: "Medzinárodná inštruktorka a zdravotnícke pozadie.", icon: Shield as LucideIcon },
           { title: "Holisticý prístup", text: "Jednota tela, duše a ducha.", icon: Heart as LucideIcon },
-          { title: "Kvalita", text: "Oficiálne zastúpenie Meinl Sonic Energy.", icon: Star as LucideIcon }
+          { title: "Kvalita", text: "Oficiálne zastúpenie Meinl Sonic Energy.", icon: "/assets/badges/ico-meinl.svg" }
         ]
       }
     }
@@ -124,59 +120,34 @@ export default function AboutPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-brand-white">
-      {/* Hero Section */}
-      <section className="relative h-[70vh] flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0">
-          <Image 
-            src="/images/bg.webp" 
-            alt="Hero Background" 
-            fill
-            priority
-            className="object-cover opacity-30"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-brand-white/0 via-brand-white/20 to-brand-white"></div>
-        </div>
-        
-        <div className="container relative z-10 px-4 text-center max-w-4xl">
-          <div className="mb-8 flex justify-center">
-            <div className="relative w-48 h-48 md:w-64 md:h-64 rounded-full border-4 border-brand-bronze overflow-hidden shadow-2xl animate-in zoom-in duration-1000">
-               <Image 
-                 src="/images/Ardi1.webp" 
-                 alt="Pál Adrienn" 
-                 fill
-                 priority
-                 className="object-cover"
-                 sizes="(max-width: 768px) 192px, 256px"
-               />
-            </div>
-          </div>
-          <h1 className="font-cormorant text-5xl md:text-7xl text-brand-brown font-bold tracking-tight mb-4">
-            {t.hero.title}
-          </h1>
-          <p className="font-cormorant text-2xl md:text-3xl text-brand-bronze italic mb-6">
-            {t.hero.subtitle}
-          </p>
-          <div className="w-16 h-px bg-brand-bronze mx-auto mb-6"></div>
-          <p className="text-brand-black/70 text-lg md:text-xl font-medium max-w-2xl mx-auto italic">
-            {t.hero.quote}
-          </p>
-        </div>
-      </section>
-
-      {/* Intro Stats/Bio Caption */}
-      <section className="py-12 bg-brand-brown/5">
-        <div className="container px-4 text-center">
-           <p className="whitespace-pre-line text-brand-brown/80 font-montserrat text-sm md:text-base leading-relaxed max-w-3xl mx-auto font-semibold uppercase tracking-widest">
-             {t.hero.caption}
-           </p>
-        </div>
-      </section>
-
       {/* Main Story Section */}
       <section className="py-24 px-4">
         <div className="container max-w-4xl mx-auto">
+          <div className="mb-16 text-center">
+            <div className="mb-12 flex justify-center">
+              <div className="relative w-48 h-48 md:w-64 md:h-64 rounded-full border-2 border-brand-bronze overflow-hidden shadow-2xl">
+                 <Image 
+                   src="/images/Ardi2.webp" 
+                   alt="Pál Adrienn" 
+                   fill
+                   className="object-cover"
+                   sizes="(max-width: 768px) 192px, 256px"
+                 />
+              </div>
+            </div>
+            <h1 className="font-cormorant text-5xl md:text-7xl text-brand-brown font-bold tracking-tight mb-4">
+              {t.hero.title}
+            </h1>
+            <p className="font-cormorant text-2xl md:text-3xl text-brand-bronze italic mb-8 whitespace-pre-line">
+              {t.hero.subtitle}
+            </p>
+            <p className="whitespace-pre-line text-brand-brown/60 font-montserrat text-[10px] md:text-xs leading-relaxed max-w-3xl mx-auto font-normal tracking-widest uppercase border-y border-brand-bronze/10 py-4">
+              {t.hero.caption}
+            </p>
+          </div>
+
           <div className="flex justify-center mb-12">
-            <Image src="/images/PalAdri-logo-stroke.svg" alt="Logo" width={64} height={64} className="opacity-30" />
+            <Image src="/images/PalAdri-logo-stroke.svg" alt="Logo" width={128} height={128} className="opacity-80" />
           </div>
           <h2 className="font-cormorant text-4xl md:text-5xl text-brand-brown text-center font-bold mb-16">
             {t.story.title}
@@ -230,8 +201,12 @@ export default function AboutPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {t.values.items.map((item, i: number) => (
               <div key={i} className="flex flex-col items-center text-center p-8 rounded-2xl bg-brand-bronze/5 border border-brand-bronze/10 transition-all hover:shadow-lg hover:border-brand-bronze/30 group">
-                <div className="w-16 h-16 rounded-full bg-brand-brown/10 flex items-center justify-center mb-6 group-hover:bg-brand-brown group-hover:text-white transition-colors duration-500">
-                  <item.icon className="w-8 h-8" />
+                <div className="w-16 h-16 rounded-full bg-brand-brown/10 flex items-center justify-center mb-6 group-hover:bg-brand-brown group-hover:text-white transition-colors duration-500 overflow-hidden">
+                  {typeof item.icon === 'string' ? (
+                    <Image src={item.icon} alt={item.title} width={40} height={40} className="w-10 h-10 group-hover:brightness-0 group-hover:invert transition-all duration-500" />
+                  ) : (
+                    <item.icon className="w-8 h-8 text-brand-brown group-hover:text-white transition-colors duration-500" />
+                  )}
                 </div>
                 <h3 className="font-cormorant text-2xl text-brand-brown font-bold mb-4">{item.title}</h3>
                 <p className="text-brand-black/60 font-playfair">{item.text}</p>

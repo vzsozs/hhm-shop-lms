@@ -25,7 +25,7 @@ export default async function ContactPage() {
       form_title: "Lépj kapcsolatba velem és beszéljünk meg egy időpontot",
       name_label: "Neved*",
       email_label: "Email címed*",
-      phone_label: "Telefon számod",
+      phone_label: "Telefonszámod",
       message_label: "Üzenet",
       submit: "Küldés",
       sending: "Kérlek várj...",
@@ -84,7 +84,7 @@ export default async function ContactPage() {
         </h1>
         <div className="space-y-4">
           <p className="text-xl md:text-2xl text-brand-black/80 font-cormorant italic leading-relaxed">
-            "{t.subtitle}"
+            &quot;{t.subtitle}&quot;
           </p>
           <p className="text-lg text-brand-black/60 font-montserrat max-w-2xl mx-auto">
             {t.description}

@@ -464,7 +464,7 @@ export function OktatasokClient({ trainings }: { trainings: Training[] }) {
           <div className="mt-20 text-center">
              <div className="inline-block mb-12">
                 <Image src="/assets/PalAdri-logo-stroke.svg" alt="Logo" width={80} height={80} className="h-auto mx-auto mb-4 w-20 md:w-30" />
-                <p className="text-[10px] uppercase tracking-[0.3em] text-brand-black/80 px-4">© HangAkadémia® – Minden jog fenntartva.</p>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-brand-black/80">© HangAkadémia® – Minden jog fenntartva.</p>
              </div>
           </div>
         </div>

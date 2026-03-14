@@ -47,7 +47,7 @@ export default function Header() {
       />
       
       {/* Navigation Wrapper */}
-      <div className="absolute top-0 inset-x-0 z-40">
+      <div className="absolute top-0 inset-x-0 z-[100]">
         <DesktopNav 
           language={language}
           onLanguageChange={handleLangChange}
@@ -76,7 +76,7 @@ export default function Header() {
         />
       </div>
 
-      <h1 className="relative font-cormorant font-medium text-[38px] md:text-[48px] text-white text-center z-10 w-full px-4 drop-shadow-md tracking-[0.01em] uppercase">
+      <h1 className="relative font-cormorant font-medium text-[38px] md:text-[48px] text-white text-center z-10 w-full px-4 drop-shadow-md">
         {config.title}
       </h1>
     </header>

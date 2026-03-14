@@ -120,9 +120,14 @@ export function CategoryClient({ categories, flatCategories }: CategoryClientPro
                     <TableCell className="font-medium text-white flex items-center">
                       {/* Vizuális hierarchia behúzása */}
                       {cat.depth > 0 && (
-                        <span className="text-white/30 mr-2 ml-4">└──</span>
+                        <span 
+                          className="text-white/30 mr-2 flex-shrink-0" 
+                          style={{ marginLeft: `${cat.depth * 1.5}rem` }}
+                        >
+                          └──
+                        </span>
                       )}
-                      {nameHu}
+                      <span className="truncate">{nameHu}</span>
                     </TableCell>
                     <TableCell className="text-white/70 text-sm">{typeof cat.slug === 'object' && cat.slug !== null ? cat.slug.hu || Object.values(cat.slug)[0] : String(cat.slug)}</TableCell>
                     <TableCell className="text-white/50 text-sm">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, X, Filter, Layers, ArrowUpDown } from "lucide-react";
@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { useDebounce } from "use-debounce"; 
 
-type CategoryItem = { id: string; name: Record<string, string>; slug: Record<string, string> };
+type CategoryItem = { id: string; name: Record<string, string>; slug: Record<string, string>; parentId?: string | null };
 
 interface ProductFiltersProps {
   initialSearch?: string;
@@ -45,6 +45,51 @@ export function ProductFilters({
   const [badge, setBadge] = useState(initialBadge || "all");
   const [categoryId, setCategoryId] = useState(initialCategoryId || "all");
   const [sort, setSort] = useState(initialSort || "newest");
+
+  // Alakítsuk át a kategóriákat hierarchikus listává
+  const sortedCategories = useMemo(() => {
+    if (!categories || categories.length === 0) return [];
+    
+    const list: (CategoryItem & { depth: number; displayName: string })[] = [];
+    
+    // Először készítsünk egy segéd-függvényt a rekurzióhoz
+    const buildHierarchy = (parentId: string | null = null, depth: number = 0) => {
+      if (depth > 10) return; // Biztonsági korlát
+
+      const children = categories.filter(c => {
+        const catPid = c.parentId === undefined ? null : c.parentId;
+        return catPid === parentId;
+      });
+
+      children.sort((a, b) => {
+        const nameA = a.name[lang] || a.name["hu"] || "";
+        const nameB = b.name[lang] || b.name["hu"] || "";
+        return nameA.localeCompare(nameB, lang === "hu" ? "hu" : "en");
+      });
+
+      for (const child of children) {
+        const name = child.name[lang] || child.name["hu"] || child.slug?.[lang] || child.slug?.["hu"] || "Névtelen";
+        list.push({ 
+          ...child, 
+          depth,
+          displayName: name
+        });
+        buildHierarchy(child.id, depth + 1);
+      }
+    };
+
+    buildHierarchy(null, 0);
+
+    // Ha maradt kategória (árva), tegyük a végére
+    const listedIds = new Set(list.map(c => c.id));
+    const orphans = categories.filter(c => !listedIds.has(c.id));
+    for (const orphan of orphans) {
+      const name = orphan.name[lang] || orphan.name["hu"] || orphan.slug?.[lang] || orphan.slug?.["hu"] || "Névtelen";
+      list.push({ ...orphan, depth: 0, displayName: name });
+    }
+
+    return list;
+  }, [categories, lang]);
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
@@ -185,14 +230,28 @@ export function ProductFilters({
             <SelectTrigger className="w-full bg-white/80 border-brand-bronze/30 text-brand-black h-[68px] md:h-[46px] rounded-xl focus:ring-1 focus:ring-brand-bronze/50 px-3 py-2 md:px-3 md:py-2 whitespace-normal md:whitespace-nowrap [&_[data-slot=select-value]]:line-clamp-2 md:[&_[data-slot=select-value]]:line-clamp-1 [&_[data-slot=select-value]]:leading-[1.1] md:[&_[data-slot=select-value]]:leading-normal [&_[data-slot=select-value]]:whitespace-normal md:[&_[data-slot=select-value]]:whitespace-nowrap text-[11px] sm:text-[14px]">
               <div className="flex items-center gap-1.5 min-w-0">
                 <Layers className="h-3.5 w-3.5 shrink-0 opacity-60" />
-                <SelectValue placeholder={t.categoryAll} />
+                <SelectValue placeholder={t.categoryAll}>
+                  {categoryId === "all" 
+                    ? t.categoryAll 
+                    : (sortedCategories.find(c => c.id === categoryId)?.displayName || t.categoryAll)}
+                </SelectValue>
               </div>
             </SelectTrigger>
-            <SelectContent className="bg-white border-brand-bronze/20 rounded-xl shadow-lg text-brand-black w-[200px]">
-              <SelectItem value="all" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black">{t.categoryAll}</SelectItem>
-              {categories.map((cat) => (
-                <SelectItem key={cat.id} value={cat.id} className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black truncate">
-                  {cat.name[lang] || cat.name["hu"] || cat.slug?.[lang] || cat.slug?.["hu"]}
+            <SelectContent className="bg-white border-brand-bronze/20 rounded-xl shadow-lg text-brand-black w-[220px] max-h-[400px]">
+              <SelectItem value="all" className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black font-medium">{t.categoryAll}</SelectItem>
+              {sortedCategories.map((cat) => (
+                <SelectItem 
+                  key={cat.id} 
+                  value={cat.id} 
+                  className="focus:bg-brand-lightbg focus:text-brand-brown py-2 cursor-pointer text-brand-black truncate"
+                >
+                  <span 
+                    className="inline-block"
+                    style={{ paddingLeft: `${cat.depth * 0.75}rem` }}
+                  >
+                    {cat.depth > 0 && <span className="text-brand-bronze/40 mr-1.5 opacity-50">└</span>}
+                    {cat.displayName}
+                  </span>
                 </SelectItem>
               ))}
             </SelectContent>

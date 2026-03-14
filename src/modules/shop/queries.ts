@@ -140,6 +140,7 @@ export async function getActiveProducts(filters?: ProductListFilters): Promise<P
   });
 
   // Formázás és visszatérés
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return rawResults.map((r: any) => ({
     ...r,
     name: r.name as Record<string, string>,
@@ -163,6 +164,7 @@ export async function getAllCategories() {
     name: c.name as Record<string, string>,
     description: c.description as Record<string, string> | null,
     slug: c.slug as Record<string, string>,
+    parentId: c.parentId,
   }));
 }
 

@@ -57,3 +57,4 @@ src/db/migrations/
 
 # Hatalmas fájlok (ha lennének képek/videók)
 public/uploads/
+design_temp/

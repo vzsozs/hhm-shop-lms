@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, text, integer, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, text, integer, jsonb, boolean } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 
 export const courses = pgTable("courses", {
@@ -38,4 +38,20 @@ export const exams = pgTable("exams", {
   chapterId: uuid("chapter_id").references(() => chapters.id, { onDelete: 'cascade' }), // Vagy fejezethez kötött
   questions: jsonb("questions").notNull(), // Vizsgakérdések és válaszok listája JSON formátumban
   requiredScore: integer("required_score").notNull(), // Elvárt pontszám vagy százalék a megfeleléshez
+});
+
+export const trainings = pgTable("trainings", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  level: varchar("level", { length: 50 }).notNull(), // basic, intermediate, advanced, intensive, tuning-fork
+  type: varchar("type", { length: 50 }).notNull(), // group, private
+  priceHuf: integer("price_huf").notNull(),
+  datesHu: text("dates_hu"),
+  datesEn: text("dates_en"),
+  datesSk: text("dates_sk"),
+  locationHu: text("location_hu"),
+  locationEn: text("location_en"),
+  locationSk: text("location_sk"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

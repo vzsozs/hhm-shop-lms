@@ -1,18 +1,21 @@
-import { db } from "./src/db/index";
+import { db } from "./src/db";
 import { sql } from "drizzle-orm";
 
-async function main() {
+async function check() {
   try {
-    const result = await db.execute(sql`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name='categories';
-    `);
-    console.log("Kategória tábla oszlopai:", result.map(r => r.column_name));
-    process.exit(0);
-  } catch(e) {
-    console.error(e);
-    process.exit(1);
+    const result = await db.execute(sql`SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public'`);
+    console.log("Tables in database:", result);
+    
+    try {
+      const trainingsResult = await db.execute(sql`SELECT count(*) FROM trainings`);
+      console.log("Trainings table exists. Count:", trainingsResult);
+    } catch (e) {
+      console.error("Trainings table DOES NOT exist or error accessing it:", e instanceof Error ? e.message : e);
+    }
+  } catch (err) {
+    console.error("Database connection error:", err instanceof Error ? err.message : err);
   }
+  process.exit();
 }
-main();
+
+check();

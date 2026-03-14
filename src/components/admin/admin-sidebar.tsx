@@ -14,6 +14,7 @@ import {
   CreditCard,
   Globe,
   LogOut,
+  Calendar,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -48,6 +49,7 @@ const sidebarGroups: SidebarGroup[] = [
     label: "LMS modul",
     items: [
       { title: "Kurzusok", href: "/admin/courses", icon: <BookOpen size={20} /> },
+      { title: "Oktatások", href: "/admin/trainings", icon: <Calendar size={20} /> },
       { title: "Vizsgák", href: "/admin/exams", icon: <Award size={20} /> },
     ],
   },

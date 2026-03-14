@@ -39,6 +39,7 @@ const sidebarGroups: SidebarGroup[] = [
     label: "Shop modul",
     items: [
       { title: "Termékek", href: "/admin/products", icon: <ShoppingBag size={20} /> },
+      { title: "Termékcsaládok", href: "/admin/product-groups", icon: <Award size={20} /> },
       { title: "Kategóriák", href: "/admin/categories", icon: <Tags size={20} /> },
       { title: "Rendelések", href: "/admin/orders", icon: <ShoppingCart size={20} /> },
     ],

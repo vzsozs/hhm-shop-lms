@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import fs from "fs";
 import path from "path";
-import { badgeSettingsSchema, BadgeSettingsPayload, createProductServerSchema, CreateProductPayload } from "./schemas";
+import { badgeSettingsSchema, BadgeSettingsPayload, createProductServerSchema, CreateProductPayload, ProductGroupServerPayload, productGroupServerSchema } from "./schemas";
 import { eq, sql } from "drizzle-orm";
 
 // Csoport-slug generálás
@@ -367,9 +367,7 @@ export async function updateProduct(id: string, formData: CreateProductPayload) 
 
 export async function deleteProduct(id: string) {
   try {
-    // A related adatok a legtöbb helyen CASCADE-del vannak megadva, kivéve ha manuálisan kell törölni
-    // A db schema alapján a legtöbb references tartalmazza az { onDelete: 'cascade' } opciót.
-    // Biztos ami biztos, töröljük a productMedia-t, bár az is kaszkádolva törlődne.
+    // A projects schema alapján a legtöbb references tartalmazza az { onDelete: 'cascade' } opciót.
     await db.delete(products).where(eq(products.id, id));
     
     revalidatePath("/admin");
@@ -380,6 +378,38 @@ export async function deleteProduct(id: string) {
   } catch(error) {
     console.error("Hiba a termék törlésekor:", error);
     return { success: false, error: "Nem sikerült törölni a terméket." };
+  }
+}
+
+export async function deleteProducts(ids: string[]) {
+  try {
+    await db.delete(products).where(sql`${products.id} IN ${ids}`);
+    
+    revalidatePath("/admin");
+    revalidatePath("/admin/products");
+    revalidatePath("/products");
+    
+    return { success: true };
+  } catch(error) {
+    console.error("Hiba a termékek csoportos törlésekor:", error);
+    return { success: false, error: "Nem sikerült törölni a kijelölt termékeket." };
+  }
+}
+
+export async function updateProductsStatus(ids: string[], status: "ACTIVE" | "INACTIVE") {
+  try {
+    await db.update(products)
+      .set({ status })
+      .where(sql`${products.id} IN ${ids}`);
+    
+    revalidatePath("/admin");
+    revalidatePath("/admin/products");
+    revalidatePath("/products");
+    
+    return { success: true };
+  } catch(error) {
+    console.error("Hiba a termékek csoportos frissítésekor:", error);
+    return { success: false, error: "Nem sikerült frissíteni a kijelölt termékeket." };
   }
 }
 
@@ -624,5 +654,43 @@ export async function upsertBadgeSettings(data: BadgeSettingsPayload) {
   } catch (error) {
     console.error("Hiba a badge beállítás mentésekor:", error);
     return { success: false, error: "Nem sikerült menteni a beállítást." };
+  }
+}
+
+export async function updateProductGroup(data: ProductGroupServerPayload) {
+  try {
+    const validated = productGroupServerSchema.parse(data);
+    
+    await db.update(productGroups)
+      .set({
+        name: validated.name as Record<string, string>,
+        slug: validated.slug as Record<string, string>,
+        updatedAt: new Date(),
+      })
+      .where(eq(productGroups.id, validated.id));
+
+    revalidatePath("/admin/product-groups");
+    revalidatePath("/products");
+    return { success: true };
+  } catch (error) {
+    console.error("Hiba a termékcsalád frissítésekor:", error);
+    if (error instanceof z.ZodError) {
+      return { success: false, error: error.issues[0]?.message || "Validációs hiba" };
+    }
+    return { success: false, error: "Váratlan hiba történt a módosítás során." };
+  }
+}
+
+export async function deleteProductGroup(id: string) {
+  try {
+    // A termékeknél a groupId SET NULL lesz a DB szinten
+    await db.delete(productGroups).where(eq(productGroups.id, id));
+    
+    revalidatePath("/admin/product-groups");
+    revalidatePath("/products");
+    return { success: true };
+  } catch (error) {
+    console.error("Hiba a termékcsalád törlésekor:", error);
+    return { success: false, error: "Nem sikerült törölni a termékcsaládot." };
   }
 }

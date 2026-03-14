@@ -266,3 +266,21 @@ export const badgeSettingsSchema = z.object({
   }),
 });
 export type BadgeSettingsPayload = z.infer<typeof badgeSettingsSchema>;
+// --- 6. Product Group Séma (Új) ---
+export const productGroupFormSchema = z.object({
+  id: z.string().min(1),
+  name_hu: z.string().min(2, "A név kötelező!"),
+  name_en: z.string(),
+  name_sk: z.string(),
+  slug_hu: z.string().min(2, "A slug kötelező!"),
+  slug_en: z.string(),
+  slug_sk: z.string(),
+});
+export type ProductGroupFormValues = z.infer<typeof productGroupFormSchema>;
+
+export const productGroupServerSchema = z.object({
+  id: z.string(),
+  name: i18nStringSchema,
+  slug: i18nStringSchema,
+});
+export type ProductGroupServerPayload = z.infer<typeof productGroupServerSchema>;

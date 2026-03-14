@@ -26,6 +26,7 @@
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.45.1",
     "isomorphic-dompurify": "^3.1.0",
+    "lodash.chunk": "^4.2.0",
     "lucide-react": "^0.577.0",
     "next": "16.1.6",
     "next-auth": "^5.0.0-beta.30",
@@ -46,6 +47,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
+    "@types/lodash.chunk": "^4.2.9",
     "@types/node": "^20.19.35",
     "@types/pg": "^8.18.0",
     "@types/react": "^19",

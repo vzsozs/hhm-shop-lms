@@ -53,9 +53,9 @@ const dict: Record<string, ContentDict> = {
     heroTitle: "Oktatások",
     sectionTitle: "Képzéseink:",
     levels: {
-      basic: { name: "Himalájai Hangtálmasszázs® - Kezdő", desc: "elmélet és gyakorlat" },
-      intermediate: { name: "Himalájai Hangtálmasszázs® - Középhaladó", desc: "elmélet és gyakorlat" },
-      advanced: { name: "Himalájai Hangtálmasszázs® - Haladó", desc: "elmélet és gyakorlat" },
+      basic: { name: "Himalájai Hangtálmasszázs® - Kezdő", desc: "A képzés elméleti és gyakorlati részből áll." },
+      intermediate: { name: "Himalájai Hangtálmasszázs® - Középhaladó", desc: "A képzés elméleti és gyakorlati részből áll." },
+      advanced: { name: "Himalájai Hangtálmasszázs® - Haladó", desc: "A képzés elméleti és gyakorlati részből áll." },
       intensive: { name: "Intenzív", desc: "Összevont alap-, közép-, felsőfokú képzés" },
       tuningFork: { name: "Rezgésterápiás hangvilla", comingSoon: "Hamarosan jelentkezünk a részletekkel…" }
     },
@@ -223,60 +223,62 @@ export function OktatasokClient({ trainings }: { trainings: Training[] }) {
 
   return (
     <div className="bg-white">
-      {/* Hero Section */}
-      <section className="relative h-[25vh] md:h-[40vh] flex items-center justify-center overflow-hidden bg-brand-brown">
-        <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-black/40 z-10" />
-          <Image 
-            src="/images/rolam-hero.jpg" 
-            alt="Hangakadémia" 
-            fill 
-            className="object-cover" 
-            priority
-          />
-        </div>
-        <div className="relative z-20 text-center px-4">
-          <h1 className="font-cormorant text-4xl md:text-7xl text-white font-bold tracking-[0.2em] uppercase drop-shadow-lg">
-            {t.heroTitle}
-          </h1>
-        </div>
-      </section>
+      
 
       {/* Main Content */}
       <section className="py-16 md:py-24 bg-[#fdfaf6]">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
             <div className="inline-block mb-4">
-              <Image src="/assets/PalAdri-logo-stroke.svg" alt="Logo" width={96} height={48} className="h-12 w-auto opacity-30" />
+              <Image src="/assets/PalAdri-logo-stroke.svg" alt="Logo" width={80} height={80} className="h-auto w-30 md:w-30" />
             </div>
             <h2 className="font-cormorant text-3xl md:text-4xl text-brand-brown font-bold uppercase tracking-widest">
               {t.sectionTitle}
             </h2>
           </div>
 
-          <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="flex flex-wrap h-auto bg-transparent p-0 gap-2 mb-12 justify-center border-b border-brand-bronze/10 pb-8">
-              <TabsTrigger value="basic" className="flex flex-col items-center py-4 px-6 rounded-xl border-2 border-brand-bronze/10 data-[state=active]:border-brand-bronze data-[state=active]:bg-white data-[state=active]:shadow-lg transition-all group">
-                <span className="text-[10px] uppercase tracking-widest text-brand-bronze/60 group-data-[state=active]:text-brand-bronze font-bold mb-1">{t.labels.beginner}</span>
-                <span className="font-cormorant font-bold text-lg md:text-xl text-brand-brown">Himalájai Hangtálmasszázs®</span>
-              </TabsTrigger>
-              <TabsTrigger value="intermediate" className="flex flex-col items-center py-4 px-6 rounded-xl border-2 border-brand-bronze/10 data-[state=active]:border-brand-bronze data-[state=active]:bg-white data-[state=active]:shadow-lg transition-all group">
-                <span className="text-[10px] uppercase tracking-widest text-brand-bronze/60 group-data-[state=active]:text-brand-bronze font-bold mb-1">{t.labels.intermediate}</span>
-                <span className="font-cormorant font-bold text-lg md:text-xl text-brand-brown">Himalájai Hangtálmasszázs®</span>
-              </TabsTrigger>
-              <TabsTrigger value="advanced" className="flex flex-col items-center py-4 px-6 rounded-xl border-2 border-brand-bronze/10 data-[state=active]:border-brand-bronze data-[state=active]:bg-white data-[state=active]:shadow-lg transition-all group">
-                <span className="text-[10px] uppercase tracking-widest text-brand-bronze/60 group-data-[state=active]:text-brand-bronze font-bold mb-1">{t.labels.advanced}</span>
-                <span className="font-cormorant font-bold text-lg md:text-xl text-brand-brown">Himalájai Hangtálmasszázs®</span>
-              </TabsTrigger>
-              <TabsTrigger value="intensive" className="flex flex-col items-center py-4 px-6 rounded-xl border-2 border-brand-bronze/10 data-[state=active]:border-brand-bronze data-[state=active]:bg-white data-[state=active]:shadow-lg transition-all group">
-                <span className="text-[10px] uppercase tracking-widest text-brand-bronze/60 group-data-[state=active]:text-brand-bronze font-bold mb-1">{t.labels.intensive}</span>
-                <span className="font-cormorant font-bold text-lg md:text-xl text-brand-brown">Himalájai Hangtálmasszázs®</span>
-              </TabsTrigger>
-              <TabsTrigger value="tuning-fork" className="flex flex-col items-center py-4 px-6 rounded-xl border-2 border-brand-bronze/10 data-[state=active]:border-brand-bronze data-[state=active]:bg-white data-[state=active]:shadow-lg opacity-60 hover:opacity-100 transition-all group">
-                <span className="text-[10px] uppercase tracking-widest text-brand-bronze/60 group-data-[state=active]:text-brand-bronze font-bold mb-1">{t.labels.soon}</span>
-                <span className="font-cormorant font-bold text-lg md:text-xl text-brand-brown">{t.levels.tuningFork.name}</span>
-              </TabsTrigger>
-            </TabsList>
+          <Tabs defaultValue="basic" className="w-full items-center">
+            <div className="flex flex-col gap-8 mb-20">
+              <TabsList className="flex flex-wrap h-auto bg-transparent p-0 gap-4 justify-center border-brand-bronze/10 pb-18">
+                <TabsTrigger value="basic" className="flex flex-col items-center justify-center py-9 px-6 rounded-2xl border-2 border-brand-bronze/10 data-[state=active]:border-brand-bronze data-[state=active]:bg-white data-[state=active]:shadow-xl transition-all duration-300 group min-w-[180px] hover:border-brand-bronze/30 hover:shadow-md">
+                  <div className="flex flex-col items-center">
+                    <span className="text-[9px] md:text-[8px] uppercase tracking-[0.2em] text-brand-bronze/80 group-data-[state=active]:text-brand-bronze font-bold leading-tight">Himalájai</span>
+                    <span className="text-[9px] md:text-[8px] uppercase tracking-[0.2em] text-brand-bronze/80 group-data-[state=active]:text-brand-bronze font-bold leading-tight">Hangtálmasszázs®</span>
+                  </div>
+                  <span className="font-cormorant font-bold text-xl md:text-2xl text-brand-brown leading-none">{t.labels.beginner}</span>
+                </TabsTrigger>
+                <TabsTrigger value="intermediate" className="flex flex-col items-center justify-center py-9 px-6 rounded-2xl border-2 border-brand-bronze/10 data-[state=active]:border-brand-bronze data-[state=active]:bg-white data-[state=active]:shadow-xl transition-all duration-300 group min-w-[180px] hover:border-brand-bronze/30 hover:shadow-md">
+                  <div className="flex flex-col items-center">
+                    <span className="text-[9px] md:text-[8px] uppercase tracking-[0.2em] text-brand-bronze/80 group-data-[state=active]:text-brand-bronze font-bold leading-tight">Himalájai</span>
+                    <span className="text-[9px] md:text-[8px] uppercase tracking-[0.2em] text-brand-bronze/80 group-data-[state=active]:text-brand-bronze font-bold leading-tight">Hangtálmasszázs®</span>
+                  </div>
+                  <span className="font-cormorant font-bold text-xl md:text-2xl text-brand-brown leading-none">{t.labels.intermediate}</span>
+                </TabsTrigger>
+                <TabsTrigger value="advanced" className="flex flex-col items-center justify-center py-9 px-6 rounded-2xl border-2 border-brand-bronze/10 data-[state=active]:border-brand-bronze data-[state=active]:bg-white data-[state=active]:shadow-xl transition-all duration-300 group min-w-[180px] hover:border-brand-bronze/30 hover:shadow-md">
+                  <div className="flex flex-col items-center">
+                    <span className="text-[9px] md:text-[8px] uppercase tracking-[0.2em] text-brand-bronze/80 group-data-[state=active]:text-brand-bronze font-bold leading-tight">Himalájai</span>
+                    <span className="text-[9px] md:text-[8px] uppercase tracking-[0.2em] text-brand-bronze/80 group-data-[state=active]:text-brand-bronze font-bold leading-tight">Hangtálmasszázs®</span>
+                  </div>
+                  <span className="font-cormorant font-bold text-xl md:text-2xl text-brand-brown leading-none">{t.labels.advanced}</span>
+                </TabsTrigger>
+                <TabsTrigger value="intensive" className="flex flex-col items-center justify-center py-9 px-6 rounded-2xl border-2 border-brand-bronze/10 data-[state=active]:border-brand-bronze data-[state=active]:bg-white data-[state=active]:shadow-xl transition-all duration-300 group min-w-[180px] hover:border-brand-bronze/30 hover:shadow-md">
+                  <div className="flex flex-col items-center">
+                    <span className="text-[9px] md:text-[8px] uppercase tracking-[0.2em] text-brand-bronze/80 group-data-[state=active]:text-brand-bronze font-bold leading-tight">Himalájai</span>
+                    <span className="text-[9px] md:text-[8px] uppercase tracking-[0.2em] text-brand-bronze/80 group-data-[state=active]:text-brand-bronze font-bold leading-tight">Hangtálmasszázs®</span>
+                  </div>
+                  <span className="font-cormorant font-bold text-xl md:text-2xl text-brand-brown leading-none">{t.labels.intensive}</span>
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsList className="flex h-auto bg-transparent p-0 justify-center">
+                <TabsTrigger value="tuning-fork" className="flex flex-col items-center justify-center py-9 px-6 rounded-2xl border-2 border-brand-bronze/10 data-[state=active]:border-brand-bronze data-[state=active]:bg-white data-[state=active]:shadow-xl opacity-80 hover:opacity-100 transition-all duration-300 group min-w-[180px] hover:border-brand-bronze/30 hover:shadow-md">
+                  <div className="flex flex-col items-center">
+                     <span className="text-[9px] md:text-[8px] uppercase tracking-[0.2em] text-brand-bronze/80 group-data-[state=active]:text-brand-bronze font-bold leading-tight text-center max-w-[140px] block line-clamp-2">{t.levels.tuningFork.name}</span>
+                  </div>
+                  <span className="font-cormorant font-bold text-xl md:text-2xl text-brand-brown leading-none">{t.labels.soon}</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
             {/* Level Contents */}
             {(['basic', 'intermediate', 'advanced', 'intensive'] as const).map((level) => (
@@ -321,7 +323,7 @@ export function OktatasokClient({ trainings }: { trainings: Training[] }) {
               Strukturált technikák, amelyeket érteni és érezni is megtanulsz – amikor a technika mögött megérted a hang teljes működését.
             </p>
             <p className="text-brand-black/60 leading-relaxed max-w-3xl mx-auto">
-              Sokan használnak hangtálాలను, de kevesen tanulják meg rendszerben, pontos technikákkal és tudatos figyelemmel alkalmazni őket a testen és a testen kívül.
+              Sokan használnak hangtálakat, de kevesen tanulják meg rendszerben, pontos technikákkal és tudatos figyelemmel alkalmazni őket a testen és a testen kívül.
             </p>
           </div>
 
@@ -461,8 +463,8 @@ export function OktatasokClient({ trainings }: { trainings: Training[] }) {
           
           <div className="mt-20 text-center">
              <div className="inline-block mb-12">
-                <Image src="/assets/PalAdri-logo-stroke.svg" alt="Logo" width={96} height={48} className="h-12 w-auto opacity-20 mx-auto mb-4" />
-                <p className="text-[10px] uppercase tracking-[0.3em] text-brand-black/40">© HangAkadémia® – Minden jog fenntartva.</p>
+                <Image src="/assets/PalAdri-logo-stroke.svg" alt="Logo" width={80} height={80} className="h-auto mx-auto mb-4 w-20 md:w-30" />
+                <p className="text-[10px] uppercase tracking-[0.3em] text-brand-black/80 px-4">© HangAkadémia® – Minden jog fenntartva.</p>
              </div>
           </div>
         </div>
@@ -608,55 +610,15 @@ function LevelContent({
       <div className="mb-12 text-center md:text-left px-4">
         <h3 className="font-cormorant text-2xl md:text-3xl text-brand-brown font-bold mb-4 uppercase tracking-widest">{title}</h3>
         <p className="text-brand-black/60 font-montserrat italic mb-8">{desc}</p>
-        
-        {detail && (
-          <div className="grid md:grid-cols-2 gap-12 text-left mb-12">
-            <div className="bg-white p-8 rounded-3xl border border-brand-bronze/10 shadow-sm transition-all hover:shadow-md">
-              <h4 className="font-bold text-brand-brown mb-6 uppercase text-xs tracking-widest flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-brand-bronze" />
-                A képzés tartalmazza:
-              </h4>
-              <ul className="space-y-3">
-                {detail.includes.map((item, i) => (
-                  <li key={i} className="text-xs text-brand-black/70 flex items-start gap-2 leading-relaxed">
-                    <Check className="w-3.5 h-3.5 text-brand-bronze shrink-0 mt-0.5" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            
-            <div className="bg-brand-brown/[0.02] p-8 rounded-3xl border border-brand-brown/5">
-              <h4 className="font-bold text-brand-brown mb-6 uppercase text-xs tracking-widest flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-brand-bronze" />
-                A képzés tematikája:
-              </h4>
-              <p className="text-xs font-bold text-brand-brown/80 mb-4 italic leading-relaxed">{detail.syllabusTitle}</p>
-              <ul className="space-y-3">
-                {detail.syllabus.map((item, i) => (
-                  <li key={i} className="text-xs text-brand-black/60 flex items-start gap-2 leading-relaxed">
-                    <div className="w-1 h-1 rounded-full bg-brand-brown/30 shrink-0 mt-1.5" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              {detail.footerText && (
-                <p className="mt-6 text-[10px] text-brand-black/40 italic border-t border-brand-bronze/10 pt-4">
-                  {detail.footerText}
-                </p>
-              )}
-            </div>
-          </div>
-        )}
       </div>
-
-      <Tabs defaultValue="group" className="w-full">
+      
+      <Tabs defaultValue="group" className="w-full mb-12">
         <div className="flex justify-center mb-8">
-          <TabsList className="bg-brand-bronze/5 p-1 rounded-2xl border border-brand-bronze/10 h-auto">
-            <TabsTrigger value="group" className="rounded-xl px-8 py-2.5 font-bold text-xs uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:text-brand-brown transition-all">
+          <TabsList className="bg-brand-bronze/5 p-1 rounded-2xl border border-brand-bronze/10 h-auto flex-wrap justify-center">
+            <TabsTrigger value="group" className="rounded-xl px-4 md:px-8 py-2.5 font-bold text-[10px] md:text-xs uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:text-brand-brown transition-all">
               {groupLabel}
             </TabsTrigger>
-            <TabsTrigger value="private" className="rounded-xl px-8 py-2.5 font-bold text-xs uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:text-brand-brown transition-all">
+            <TabsTrigger value="private" className="rounded-xl px-4 md:px-8 py-2.5 font-bold text-[10px] md:text-xs uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:text-brand-brown transition-all">
               {privateLabel}
             </TabsTrigger>
           </TabsList>
@@ -685,6 +647,46 @@ function LevelContent({
           )}
         </TabsContent>
       </Tabs>
+
+      {detail && (
+        <div className="grid md:grid-cols-2 gap-8 md:gap-12 text-left px-4 md:px-0">
+          <div className="bg-white p-6 md:p-8 rounded-3xl border border-brand-bronze/10 shadow-sm transition-all hover:shadow-md">
+            <h4 className="font-bold text-brand-brown mb-6 uppercase text-xs tracking-widest flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-brand-bronze" />
+              A képzés tartalmazza:
+            </h4>
+            <ul className="space-y-3">
+              {detail.includes.map((item, i) => (
+                <li key={i} className="text-xs text-brand-black/70 flex items-start gap-2 leading-relaxed">
+                  <Check className="w-3.5 h-3.5 text-brand-bronze shrink-0 mt-0.5" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+          
+          <div className="bg-brand-brown/[0.02] p-6 md:p-8 rounded-3xl border border-brand-brown/5">
+            <h4 className="font-bold text-brand-brown mb-6 uppercase text-xs tracking-widest flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-brand-bronze" />
+              A képzés tematikája:
+            </h4>
+            <p className="text-xs font-bold text-brand-brown/80 mb-4 italic leading-relaxed">{detail.syllabusTitle}</p>
+            <ul className="space-y-3">
+              {detail.syllabus.map((item, i) => (
+                <li key={i} className="text-xs text-brand-black/60 flex items-start gap-2 leading-relaxed">
+                  <div className="w-1 h-1 rounded-full bg-brand-brown/30 shrink-0 mt-1.5" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+            {detail.footerText && (
+              <p className="mt-6 text-[10px] text-brand-black/80 italic border-t border-brand-bronze/10 pt-4">
+                {detail.footerText}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -702,30 +704,30 @@ function LevelCard({ training, title, typeLabel, applyText, addToCartText, price
   const location = lang === 'hu' ? training.locationHu : lang === 'en' ? training.locationEn : training.locationSk;
 
   return (
-    <Card className="border-brand-bronze/20 shadow-xl rounded-3xl overflow-hidden bg-white/80 backdrop-blur-sm">
-      <CardContent className="p-8 md:p-12">
+    <Card className="border-brand-bronze/20 shadow-xl rounded-3xl overflow-hidden bg-white/80 backdrop-blur-sm mx-4 md:mx-0">
+      <CardContent className="p-6 md:p-12">
         <div className="flex flex-col md:flex-row justify-between items-start gap-8">
-          <div className="flex-1">
+          <div className="flex-1 w-full">
             <Badge className="bg-brand-bronze/10 text-brand-bronze border-none mb-4 uppercase tracking-[0.2em] font-bold py-1 px-3">
               {typeLabel}
             </Badge>
-            <h3 className="font-cormorant text-3xl md:text-4xl text-brand-brown font-bold mb-4">{title}</h3>
+            <h3 className="font-cormorant text-2xl md:text-3xl lg:text-4xl text-brand-brown font-bold mb-4">{title}</h3>
             
-            <div className="space-y-4 text-brand-black/70 font-montserrat text-sm leading-relaxed mb-8">
+            <div className="space-y-4 text-brand-black/70 font-montserrat text-xs md:text-sm leading-relaxed mb-8">
               <div className="flex items-center gap-3">
-                <CalendarIcon className="w-5 h-5 text-brand-bronze" />
+                <CalendarIcon className="w-4 h-4 md:w-5 md:h-5 text-brand-bronze" />
                 <span>{dates || "Dátum egyeztetés szerint"}</span>
               </div>
               <div className="flex items-center gap-3">
-                <MapPin className="w-5 h-5 text-brand-bronze" />
+                <MapPin className="w-4 h-4 md:w-5 md:h-5 text-brand-bronze" />
                 <span>{location || "1188 Budapest, Nemes u. 88."}</span>
               </div>
             </div>
           </div>
           
-          <div className="bg-brand-brown p-8 rounded-3xl text-white text-center min-w-[240px] shadow-2xl relative overflow-hidden group">
+          <div className="bg-brand-brown p-8 rounded-3xl text-white text-center w-full md:min-w-[240px] md:w-auto shadow-2xl relative overflow-hidden group">
             <p className="text-xs uppercase tracking-[0.2em] opacity-60 mb-2 font-bold">{priceLabel}</p>
-            <div className="text-4xl font-bold font-cormorant mb-6">{training.priceHuf.toLocaleString('hu-HU')} Ft</div>
+            <div className="text-3xl md:text-4xl font-bold font-cormorant mb-6">{training.priceHuf.toLocaleString('hu-HU')} Ft</div>
             <Button className="w-full bg-white text-brand-brown hover:bg-brand-lightbg font-bold tracking-widest uppercase flex items-center justify-center gap-2">
               <ShoppingCart className="w-4 h-4" />
               {addToCartText}
@@ -734,7 +736,7 @@ function LevelCard({ training, title, typeLabel, applyText, addToCartText, price
         </div>
         
         <div className="mt-8 pt-8 border-t border-brand-bronze/10">
-          <Link href="https://forms.gle/LMXTeJyAZ6MkKVGr9" target="_blank" className="inline-flex items-center text-brand-bronze font-bold uppercase tracking-widest text-sm hover:text-brand-brown group transition-colors">
+          <Link href="https://forms.gle/LMXTeJyAZ6MkKVGr9" target="_blank" className="inline-flex items-center text-brand-bronze font-bold uppercase tracking-widest text-xs md:text-sm hover:text-brand-brown group transition-colors">
             {applyText}
             <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>

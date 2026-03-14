@@ -1,30 +1,38 @@
 import { db } from "@/db";
-import { products, productVariants, productMedia, productCategories, productAttachments, categories, syncLogs } from "@/db/schema/shop";
+import { products, productVariants, productMedia, productCategories, productAttachments, categories, syncLogs, productGroups } from "@/db/schema/shop";
 import { eq, sql, and, inArray } from "drizzle-orm";
 import * as XLSX from "xlsx";
 import DOMPurify from "isomorphic-dompurify";
 import { MEINL_SYNC_CONFIG } from "@/config/meinl-sync";
 
-const SPEC_MAPPING: Record<string, { en: string; hu: string }> = {
-  "Material": { en: "Material", hu: "Anyag" },
-  "Brand": { en: "Brand", hu: "Márka" },
-  "Color": { en: "Color", hu: "Szín" },
-  "Size": { en: "Size", hu: "Méret" },
-  "Chakra": { en: "Chakra", hu: "Csakra" },
-  "Tuning": { en: "Tuning", hu: "Hangolás" },
-  "Diameter": { en: "Diameter", hu: "Átmérő" },
-  "Strings": { en: "Strings", hu: "Húrok száma" },
-  "Origin": { en: "Origin", hu: "Származás" },
-  "Country of Origin": { en: "Country of Origin", hu: "Származási hely" },
-  "Length": { en: "Length", hu: "Hosszúság" },
-  "Finish": { en: "Finish", hu: "Kivitel" },
-  "Inclusive": { en: "Inclusive", hu: "Tartalmaz" },
-  "Made in": { en: "Made in", hu: "Származási hely" },
-  "Note/Tuning": { en: "Note/Tuning", hu: "Megjegyzés/Hangolás" },
+const SPEC_MAPPING: Record<string, { en: string; hu: string; sk: string }> = {
+  "Material": { en: "Material", hu: "Anyag", sk: "Materiál" },
+  "Brand": { en: "Brand", hu: "Márka", sk: "Značka" },
+  "Color": { en: "Color", hu: "Szín", sk: "Farba" },
+  "Size": { en: "Size", hu: "Méret", sk: "Veľkosť" },
+  "Chakra": { en: "Chakra", hu: "Csakra", sk: "Čakra" },
+  "Tuning": { en: "Tuning", hu: "Hangolás", sk: "Ladenie" },
+  "Diameter": { en: "Diameter", hu: "Átmérő", sk: "Priemer" },
+  "Strings": { en: "Strings", hu: "Húrok száma", sk: "Počet strún" },
+  "Origin": { en: "Origin", hu: "Származás", sk: "Pôvod" },
+  "Country of Origin": { en: "Country of Origin", hu: "Származási hely", sk: "Krajina pôvodu" },
+  "Length": { en: "Length", hu: "Hosszúság", sk: "Dĺžka" },
+  "Finish": { en: "Finish", hu: "Kivitel", sk: "Povrchová úprava" },
+  "Inclusive": { en: "Inclusive", hu: "Tartalmaz", sk: "Obsahuje" },
+  "Made in": { en: "Made in", hu: "Származási hely", sk: "Vyrobené v" },
+  "Note/Tuning": { en: "Note/Tuning", hu: "Megjegyzés/Hangolás", sk: "Poznámka/Ladenie" },
+  "Weight": { en: "Weight", hu: "Súlya", sk: "Hmotnosť" },
+  "Height": { en: "Height", hu: "Magasság", sk: "Výška" },
+  "Width": { en: "Width", hu: "Szélesség", sk: "Šírka" },
+  "Depth": { en: "Depth", hu: "Mélység", sk: "Hĺbka" },
+  "Top": { en: "Top", hu: "Teteje", sk: "Vrchná časť" },
+  "Including": { en: "Including", hu: "Tartalmaz", sk: "Vrátane" },
+  "Speification": { en: "Specification", hu: "Specifikáció", sk: "Špecifikácia" },
 };
 
 const SPEC_EXCLUDE = [
   "Item",
+  "Related",
   "Product Name",
   "Product Description",
   "MSRP",
@@ -128,6 +136,8 @@ export type SyncResult = {
   successSkus: string[];
   errorSkus: { sku: string; error: string }[];
   skippedSkus: string[];
+  groupAssignedCount: number;
+  groupSkippedSkus: string[];
 };
 
 export async function syncMeinlData(fileBuffer: Buffer): Promise<SyncResult> {
@@ -149,12 +159,17 @@ export async function syncMeinlData(fileBuffer: Buffer): Promise<SyncResult> {
     successSkus: [],
     errorSkus: [],
     skippedSkus: [],
+    groupAssignedCount: 0,
+    groupSkippedSkus: [],
   };
 
   if (data.length === 0) return result;
 
   // 1. Kategóriák betöltése a gyorsabb kereséshez
   const allCategories = await db.select().from(categories);
+  
+  // Gyűjtő a kapcsolódó termékekhez és csoportokhoz
+  const relatedGroupsToProcess: { mainSku: string, relatedSkus: string[], groupName: string }[] = [];
   
   // 2. Eddigi Meinl termékek SKUi (deaktiváláshoz)
   // Mostantól a brand = 'Meinl' alapján azonosítjuk őket, mert a type = 'physical' lesz
@@ -237,15 +252,16 @@ export async function syncMeinlData(fileBuffer: Buffer): Promise<SyncResult> {
         const mapping = SPEC_MAPPING[key];
         const key_en = mapping ? mapping.en : key;
         const key_hu = mapping ? mapping.hu : key;
+        const key_sk = mapping ? mapping.sk : key;
         const val = String(value).trim();
 
         specifications.push({
           key_en,
           key_hu,
+          key_sk,
           value_en: val,
           value_hu: val,
-          key_sk: "",
-          value_sk: "",
+          value_sk: val,
         });
       });
 
@@ -306,9 +322,9 @@ export async function syncMeinlData(fileBuffer: Buffer): Promise<SyncResult> {
           const [newProduct] = await tx.insert(products).values({
             type: "physical", // Mindig fizikai termék
             brand: "Meinl",
-            name: { en: nameEn, hu: nameEn }, // Kezdetben HU is legyen EN ha új
-            slug: { hu: slugHu, en: slugEn },
-            longDescription: { en: descEn },
+            name: { en: nameEn, hu: nameEn, sk: nameEn }, // Kezdetben HU és SK is legyen EN ha új
+            slug: { hu: slugHu, en: slugEn, sk: slugEn },
+            longDescription: { en: descEn, hu: "", sk: "" },
             // shortDescription-t üresen hagyjuk új terméknél is
             specifications: specifications,
             status: "ACTIVE",
@@ -430,8 +446,8 @@ export async function syncMeinlData(fileBuffer: Buffer): Promise<SyncResult> {
             const slugEn = await ensureUniqueSlug(baseSlug, "en");
 
             const [newCat] = (await tx.insert(categories).values({
-              name: { hu: catName, en: catName, sk: "" },
-              slug: { hu: slugHu, en: slugEn, sk: "" },
+              name: { hu: catName, en: catName, sk: catName },
+              slug: { hu: slugHu, en: slugEn, sk: slugEn },
               parentId: lastParentId,
             }).returning()) as (typeof categories.$inferSelect)[];
 
@@ -461,7 +477,29 @@ export async function syncMeinlData(fileBuffer: Buffer): Promise<SyncResult> {
           }
         }
         
+        
         result.successSkus.push(sku);
+
+        // 7. Rokon termékek és csoportadatok kigyűjtése a post-processinghez
+        const relatedStr = String(row["Related"] || "").trim();
+        const relatedSkus = relatedStr ? relatedStr.split(',').map(s => s.trim()).filter(Boolean) : [];
+        
+        if (relatedSkus.length > 0) {
+          // Csoport név meghatározása fallback-el
+          const groupName = 
+            String(row["Product group5"] || "").trim() ||
+            String(row["Product group4"] || "").trim() ||
+            String(row["Product group3"] || "").trim() ||
+            String(row["Product group2"] || "").trim() ||
+            String(row["Product group"] || "").trim() ||
+            "Meinl Series";
+
+          relatedGroupsToProcess.push({
+            mainSku: sku,
+            relatedSkus,
+            groupName
+          });
+        }
       });
 
     } catch (err) {
@@ -483,7 +521,105 @@ export async function syncMeinlData(fileBuffer: Buffer): Promise<SyncResult> {
     result.deactivated = productIdsToDeactivate.length;
   }
 
-  // 7. Mentés a sync_logs táblába
+  // 7. Post-processing: Rokon termékek csoportba rendezése
+  if (relatedGroupsToProcess.length > 0) {
+    try {
+      // Összes érintett SKU kigyűjtése
+      const allSkusToMap = new Set<string>();
+      relatedGroupsToProcess.forEach(g => {
+        allSkusToMap.add(g.mainSku);
+        g.relatedSkus.forEach(s => allSkusToMap.add(s));
+      });
+
+      const skuArray = Array.from(allSkusToMap);
+      
+      // SKU -> { productId, groupId } Map építése
+      const productMap = new Map<string, { id: string, groupId: string | null }>();
+      const batchSize = 100;
+      for (let i = 0; i < skuArray.length; i += batchSize) {
+        const batch = skuArray.slice(i, i + batchSize);
+        const productsInfo = await db
+          .select({ 
+            sku: productVariants.sku, 
+            id: products.id, 
+            groupId: products.groupId 
+          })
+          .from(products)
+          .innerJoin(productVariants, eq(products.id, productVariants.productId))
+          .where(inArray(productVariants.sku, batch));
+        
+        productsInfo.forEach(p => {
+          productMap.set(p.sku, { id: p.id, groupId: p.groupId });
+        });
+      }
+
+      // Csoportok betöltése a memóriába
+      const activeProductGroups = await db.select().from(productGroups);
+
+      // Csoportok feldolgozása
+      for (const groupReq of relatedGroupsToProcess) {
+        let group = activeProductGroups.find(g => {
+          const names = (g.name || {}) as Record<string, string>;
+          return names.hu === groupReq.groupName || names.en === groupReq.groupName;
+        });
+
+        // Ha nincs ilyen csoport, hozzuk létre
+        if (!group) {
+          const slug = generateSlug(groupReq.groupName);
+          const [newGroup] = await db.insert(productGroups).values({
+            name: { hu: groupReq.groupName, en: groupReq.groupName, sk: "" },
+            slug: { hu: slug, en: slug, sk: "" },
+          }).returning();
+          
+          group = newGroup;
+          activeProductGroups.push(newGroup);
+        }
+
+        const groupId = group.id;
+        const toUpdateIds: string[] = [];
+
+        // Main SKU és Related SKUs ellenőrzése
+        const allSkusInThisGroup = [groupReq.mainSku, ...groupReq.relatedSkus];
+        
+        for (const sku of allSkusInThisGroup) {
+          const info = productMap.get(sku);
+          if (info) {
+            if (info.groupId === null) {
+              toUpdateIds.push(info.id);
+            } else if (info.groupId !== groupId) {
+              // Ha már van csoportja és az NEM ez, akkor kihagyjuk
+              if (!result.groupSkippedSkus.includes(sku)) {
+                result.groupSkippedSkus.push(sku);
+              }
+            }
+          }
+        }
+
+        // Batch update ha vannak frissítendő termékek
+        if (toUpdateIds.length > 0) {
+          await db.update(products)
+            .set({ groupId })
+            .where(inArray(products.id, toUpdateIds));
+          
+          result.groupAssignedCount += toUpdateIds.length;
+          
+          // Lokálisan is frissítsük a Map-et, hogy ne próbáljuk újra frissíteni ha másik sorban is szerepel
+          toUpdateIds.forEach(id => {
+            for (const [, info] of productMap.entries()) {
+              if (info.id === id) {
+                info.groupId = groupId;
+              }
+            }
+          });
+        }
+      }
+    } catch (postErr) {
+      console.error("Hiba a csoportok post-processingje során:", postErr);
+      result.errors.push(`Hiba a csoportok feldolgozásakor: ${postErr instanceof Error ? postErr.message : String(postErr)}`);
+    }
+  }
+
+  // 8. Mentés a sync_logs táblába
   await db.insert(syncLogs).values({
     syncType: "meinl",
     processedCount: result.processed,
@@ -493,6 +629,8 @@ export async function syncMeinlData(fileBuffer: Buffer): Promise<SyncResult> {
     successSkus: result.successSkus,
     errorSkus: result.errorSkus,
     skippedSkus: result.skippedSkus,
+    groupAssignedCount: result.groupAssignedCount,
+    groupSkippedSkus: result.groupSkippedSkus,
   });
 
   return result;

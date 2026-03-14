@@ -232,6 +232,7 @@ export type ProductDetailItem = {
     shortDescription: Record<string, string> | null;
     mainImageUrl: string | null;
     badges: { icon: string; tooltip: Record<string, string> }[];
+    sku: string | null;
   }[];
 };
 
@@ -280,10 +281,11 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
     shortDescription: Record<string, string> | null;
     mainImageUrl: string | null;
     badges: { icon: string; tooltip: Record<string, string> }[];
+    sku: string | null;
   }[] = [];
 
   if (productData.groupId) {
-    // Fetch group products and their first images using a Join
+    // Fetch group products, their first images and their first variant's SKU
     const rawGroupData = await db
       .select({
         id: products.id,
@@ -293,13 +295,15 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
         mediaUrl: productMedia.url,
         mediaOrder: productMedia.order,
         badges: products.badges,
+        sku: productVariants.sku,
       })
       .from(products)
       .leftJoin(productMedia, and(eq(products.id, productMedia.productId), eq(productMedia.type, 'IMAGE')))
+      .leftJoin(productVariants, eq(products.id, productVariants.productId))
       .where(and(eq(products.groupId, productData.groupId), eq(products.status, 'ACTIVE')))
-      .orderBy(asc(products.id), asc(productMedia.order));
+      .orderBy(asc(products.id), asc(productMedia.order), asc(productVariants.sku));
 
-    // Group by product id to take the first image for each
+    // Group by product id to take the first image and first SKU for each
     const grouped = new Map<string, { 
       id: string; 
       name: Record<string, string>; 
@@ -307,6 +311,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
       shortDescription: Record<string, string> | null;
       mainImageUrl: string | null;
       badges: { icon: string; tooltip: Record<string, string> }[];
+      sku: string | null;
     }>();
     for (const item of rawGroupData) {
       if (!grouped.has(item.id)) {
@@ -319,6 +324,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
           badges: ((item.badges || []) as { icon: string }[]).map(badge => {
             return { icon: badge.icon, tooltip: badgeSettingsMap.get(badge.icon) || {} };
           }) as { icon: string; tooltip: Record<string, string> }[],
+          sku: item.sku,
         });
       }
     }
@@ -375,6 +381,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
       shortDescription: gp.shortDescription,
       mainImageUrl: gp.mainImageUrl,
       badges: gp.badges,
+      sku: gp.sku,
     })),
   };
 }

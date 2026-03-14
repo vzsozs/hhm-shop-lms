@@ -129,6 +129,8 @@ export const syncLogs = pgTable("sync_logs", {
   successSkus: jsonb("success_skus"), // Array of SKUs
   errorSkus: jsonb("error_skus"), // Array of { sku, error }
   skippedSkus: jsonb("skipped_skus"), // Array of SKUs
+  groupAssignedCount: integer("group_assigned_count").default(0).notNull(),
+  groupSkippedSkus: jsonb("group_skipped_skus"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

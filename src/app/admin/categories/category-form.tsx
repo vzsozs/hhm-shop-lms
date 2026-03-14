@@ -102,7 +102,7 @@ export function CategoryForm({ initialData, categories, onSuccess, onCancel }: C
 
       const result = await upsertCategory(payload);
 
-      if (result.error) {
+      if ("error" in result) {
         toast.error(result.error);
       } else {
         toast.success(initialData ? "Kategória frissítve!" : "Kategória létrehozva!");

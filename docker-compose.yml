@@ -11,6 +11,8 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - hhm_network
 
   web:
     build:
@@ -24,10 +26,16 @@ services:
       - "3000:3000"
     volumes:
       - ./uploads:/app/public/uploads
+    networks:
+      - hhm_network
     environment:
-      - NEXT_PUBLIC_APP_URL=http://185.208.227.129:3000
+      - NEXT_PUBLIC_APP_URL=https://zvukovaakademia.sk
     depends_on:
       - db
 
 volumes:
   postgres_data:
+
+networks:
+  hhm_network:
+    external: true

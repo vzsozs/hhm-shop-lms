@@ -1,5 +1,6 @@
 import Header from "@/components/public/Header";
 import Footer from "@/components/public/Footer";
+import PublicLayoutWrapper from "@/components/public/PublicLayoutWrapper";
 import { Cormorant, Playfair_Display, Montserrat, Poppins } from "next/font/google";
 
 const cormorant = Cormorant({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: '--font-cormorant' });
@@ -12,13 +13,15 @@ export default function PublicLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const fonts = `${cormorant.variable} ${playfair.variable} ${montserrat.variable} ${poppins.variable}`;
+
   return (
-    <div className={`min-h-screen bg-brand-lightbg text-brand-black ${cormorant.variable} ${playfair.variable} ${montserrat.variable} ${poppins.variable} font-montserrat text-[14px]`}>
-      <Header />
-      <main className="min-h-screen">
-        {children}
-      </main>
-      <Footer />
-    </div>
+    <PublicLayoutWrapper 
+      header={<Header />}
+      footer={<Footer />}
+      fonts={fonts}
+    >
+      {children}
+    </PublicLayoutWrapper>
   );
 }

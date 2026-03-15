@@ -3,6 +3,7 @@
 
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useLanguage } from '@/context/language-context';
 import { Language } from '@/modules/shared/lib/i18n-constants';
@@ -20,6 +21,8 @@ export default function Header() {
   const [hhmOpen, setHhmOpen] = useState(false);
   const [servicesOpen, setServicesOpen] = useState(false);
 
+  const isHome = pathname === '/';
+
   // Dynamic config based on pathname
   const config = useMemo(() => {
     return HEADER_CONFIGS[pathname] || DEFAULT_HEADER_CONFIG;
@@ -35,15 +38,22 @@ export default function Header() {
     router.refresh();
   };
 
+  const dict = {
+    hu: { subtitle: "Üdvözöllek a rezgések, frekvenciák és a hangok világában.", cta: "Időpontfoglalás" },
+    en: { subtitle: "Welcome to the world of vibrations, frequencies, and sounds.", cta: "Book an Appointment" },
+    sk: { subtitle: "Vitajte vo svete vibrácií, frekvencií a zvukov.", cta: "Objednať sa" }
+  };
+  const t = dict[language];
+
   return (
-    <header className="relative w-full flex flex-col items-center justify-end pb-[24px] bg-brand-bronze overflow-hidden h-[40vh]">
+    <header className={`relative w-full flex flex-col items-center justify-center overflow-hidden transition-all duration-700 ${isHome ? 'h-screen' : 'h-[40vh] pb-[24px] justify-end'}`}>
       <Image 
         src={config.backgroundImage} 
         alt="Background" 
         fill 
         priority 
         className="object-cover object-center -z-0"
-        key={config.backgroundImage} // Force re-animation/fade on change
+        key={config.backgroundImage} 
       />
       
       {/* Navigation Wrapper */}
@@ -76,9 +86,22 @@ export default function Header() {
         />
       </div>
 
-      <h1 className="relative font-cormorant font-medium text-[38px] md:text-[48px] text-white text-center z-10 w-full px-4 drop-shadow-md">
-        {config.title}
-      </h1>
+      <div className={`relative z-10 w-full px-4 flex flex-col items-center text-center transition-all duration-700 ${isHome ? 'gap-1 pt-[20px]' : 'gap-2'}`}>
+        <h1 className={`font-cormorant drop-shadow-md text-white transition-all duration-700 ${isHome ? 'text-[48px] md:text-[80px] font-bold tracking-tight' : 'font-medium text-[38px] md:text-[48px]'}`}>
+          {config.title}
+        </h1>
+        
+        {isHome && (
+          <div className="flex flex-col items-center gap-12 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300 fill-mode-both">
+            <p className="font-cormorant text-xl md:text-3xl text-white/90 italic max-w-3xl drop-shadow-lg leading-relaxed px-4">
+               &quot;{t.subtitle}&quot;
+            </p>
+            <Link href="/kapcsolat" className="bg-white/10 hover:bg-white/20 text-white border border-white/30 px-12 py-5 text-lg rounded-full backdrop-blur-md transition-all shadow-2xl hover:scale-105 font-cormorant tracking-[0.2em] uppercase">
+              {t.cta}
+            </Link>
+          </div>
+        )}
+      </div>
     </header>
   );
 }

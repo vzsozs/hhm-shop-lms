@@ -6,7 +6,7 @@ export interface HeaderConfig {
 
 export const HEADER_CONFIGS: Record<string, HeaderConfig> = {
   '/': {
-    title: 'Hangakadémia webshop',
+    title: 'HANGAKADÉMIA',
     backgroundImage: '/assets/bg.webp'
   },
   '/oktatasok': {
@@ -26,7 +26,7 @@ export const HEADER_CONFIGS: Record<string, HeaderConfig> = {
     backgroundImage: '/images/Hangtal-bg.webp'
   },
   '/shop': {
-    title: 'Webshop',
+    title: 'Hangakadémia webshop',
     backgroundImage: '/assets/bg.webp'
   },
   '/login': {

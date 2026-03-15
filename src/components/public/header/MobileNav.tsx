@@ -108,8 +108,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
                 <Link href="/hangtalak" onClick={() => setMobileMenuOpen(false)} className="text-center text-sm font-poppins hover:text-white/80">Himalájai hangtálak</Link>
                 <Link href="/hangtal-masszazs" onClick={() => setMobileMenuOpen(false)} className="text-center text-sm font-poppins hover:text-white/80 font-bold">Himalájai Hangtálmasszázs®</Link>
                 <Link href="/tudomanyos-alapok" onClick={() => setMobileMenuOpen(false)} className="text-center text-sm font-poppins hover:text-white/80">Tudományos alapok</Link>
-                <Link href="/eszkozok-hangok" onClick={() => setMobileMenuOpen(false)} className="text-center text-sm font-poppins hover:text-white/80">Eszközök és hangok</Link>
-              </div>
+                </div>
             )}
           </div>
 

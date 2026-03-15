@@ -49,10 +49,6 @@ export const HEADER_CONFIGS: Record<string, HeaderConfig> = {
       title: 'Tudományos alapok',
       backgroundImage: '/images/TudomanyosHatter-05.webp'
   },
-  '/eszkozok-hangok': {
-      title: 'Eszközök és hangok',
-      backgroundImage: '/images/Adri-terapia-09.webp'
-  },
   '/media': {
       title: 'Média megjelenések',
       backgroundImage: '/images/Magazine.webp'

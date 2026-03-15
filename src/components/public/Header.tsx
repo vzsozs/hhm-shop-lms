@@ -39,9 +39,9 @@ export default function Header() {
   };
 
   const dict = {
-    hu: { subtitle: "Üdvözöllek a rezgések, frekvenciák és a hangok világában.", cta: "Időpontfoglalás" },
-    en: { subtitle: "Welcome to the world of vibrations, frequencies, and sounds.", cta: "Book an Appointment" },
-    sk: { subtitle: "Vitajte vo svete vibrácií, frekvencií a zvukov.", cta: "Objednať sa" }
+    hu: { subtitle: "Üdvözöllek a rezgések, frekvenciák és a hangok világában.", cta: "Időpontfoglalás", shop: "Webshop" },
+    en: { subtitle: "Welcome to the world of vibrations, frequencies, and sounds.", cta: "Book an Appointment", shop: "Shop" },
+    sk: { subtitle: "Vitajte vo svete vibrácií, frekvencií a zvukov.", cta: "Objednať sa", shop: "Obchod" }
   };
   const t = dict[language];
 
@@ -96,9 +96,14 @@ export default function Header() {
             <p className="font-cormorant text-xl md:text-3xl text-white/90 italic max-w-3xl drop-shadow-lg leading-relaxed px-4">
                &quot;{t.subtitle}&quot;
             </p>
-            <Link href="/kapcsolat" className="bg-white/10 hover:bg-white/20 text-white border border-white/30 px-12 py-5 text-lg rounded-full backdrop-blur-md transition-all shadow-2xl hover:scale-105 font-cormorant tracking-[0.2em] uppercase">
-              {t.cta}
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-6">
+              <Link href="/kapcsolat" className="bg-white/10 hover:bg-white/20 text-white border border-white/30 px-12 py-5 text-lg rounded-full backdrop-blur-md transition-all shadow-2xl hover:scale-105 font-cormorant tracking-[0.2em] uppercase">
+                {t.cta}
+              </Link>
+              <Link href="/shop" className="bg-brand-bronze/40 hover:bg-brand-bronze/60 text-white border border-white/50 px-12 py-5 text-lg rounded-full backdrop-blur-md transition-all shadow-2xl hover:scale-105 font-cormorant tracking-[0.2em] uppercase">
+                {t.shop}
+              </Link>
+            </div>
           </div>
         )}
       </div>

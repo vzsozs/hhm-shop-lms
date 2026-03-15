@@ -3,7 +3,8 @@
 import Image from 'next/image';
 import { useLanguage } from '@/context/language-context';
 import { Language } from '@/modules/shared/lib/i18n-constants';
-import { CheckCircle2, History, HeartPulse, ShieldCheck, Scroll } from 'lucide-react';
+import { CheckCircle2, History, HeartPulse, Scroll } from 'lucide-react';
+import { LegalSection } from '@/components/public/LegalSection';
 
 export default function SoundTherapyPage() {
   const { language } = useLanguage();
@@ -16,6 +17,8 @@ export default function SoundTherapyPage() {
     section3_title: string;
     section3_items: string[];
     section3_footer: string;
+    legal_notice: string;
+    copyright: string;
   }> = {
     hu: {
       section1_title: "Hangalapú, rezgésorientált megközelítés történeti és kortárs kontextusban",
@@ -31,7 +34,9 @@ export default function SoundTherapyPage() {
         "tudatos kísérői jelenlét – nem diagnózis- vagy kezelésközpontú",
         "prevenció és önszabályozás támogatása – a testi érzékelés és a figyelmi jelenlét fejlesztésén keresztül"
       ],
-      section3_footer: "A HangAkadémia® rendszerében a hangterápia strukturált, oktatási és etikai keretek között alkalmazott módszer, amely magas szakmai minőséget képvisel, miközben tiszteletben tartja az egészségügyi és jogi határokat."
+      section3_footer: "A HangAkadémia® rendszerében a hangterápia strukturált, oktatási és etikai keretek között alkalmazott módszer, amely magas szakmai minőséget képvisel, miközben tiszteletben tartja az egészségügyi és jogi határokat.",
+      legal_notice: "HangAkadémia® - Jogi nyilatkozat",
+      copyright: "© HangAkadémia® – Minden jog fenntartva. A tartalom szerzői jogvédelem alatt áll."
     },
     en: {
       section1_title: "Sound-based, vibration-oriented approach in historical and contemporary contexts",
@@ -47,7 +52,9 @@ export default function SoundTherapyPage() {
         "conscious presence of the practitioner – not focused on diagnosis or treatment",
         "prevention and support of self-regulation – through the development of physical perception and attentive presence"
       ],
-      section3_footer: "In the HangAkadémia® system, sound therapy is a method applied within structured educational and ethical frameworks, representing high professional quality while respecting health and legal boundaries."
+      section3_footer: "In the HangAkadémia® system, sound therapy is a method applied within structured educational and ethical frameworks, representing high professional quality while respecting health and legal boundaries.",
+      legal_notice: "HangAkadémia® - Legal Notice",
+      copyright: "© HangAkadémia® – All rights reserved. Content protected by copyright."
     },
     sk: {
       section1_title: "Zvukovo založený, na vibrácie orientovaný prístup v historickom a súčasnom kontexte",
@@ -63,7 +70,9 @@ export default function SoundTherapyPage() {
         "vedomá prítomnosť terapeuta – nezameriava sa na diagnózu alebo liečbu",
         "prevencia a podpora samoregulácie – prostredníctvom rozvoja fyzického vnímania a pozornej prítomnosti"
       ],
-      section3_footer: "V systéme HangAkadémia® je zvuková terapia metódou aplikovanou v rámci štruktúrovaných vzdelávacích a etických rámcov, predstavujúcou vysokú odbornú kvalitu pri rešpektovaní zdravotných a právnych hraníc."
+      section3_footer: "V systéme HangAkadémia® je zvuková terapia metódou aplikovanou v rámci štruktúrovaných vzdelávacích a etických rámcov, predstavujúcou vysokú odbornú kvalitu pri rešpektovaní zdravotných a právnych hraníc.",
+      legal_notice: "HangAkadémia® - Právne vyhlásenie",
+      copyright: "© HangAkadémia® – Všetky práva vyhradené. Obsah je chránený autorským právom."
     }
   };
 
@@ -165,21 +174,7 @@ export default function SoundTherapyPage() {
         </div>
       </section>
 
-      {/* Final note and logo */}
-      <section className="py-24 bg-white px-4">
-        <div className="container max-w-4xl mx-auto text-center">
-           <div className="max-w-3xl mx-auto">
-             <ShieldCheck size={48} className="text-brand-bronze mx-auto mb-8 opacity-40" />
-             <p className="font-cormorant text-2xl text-brand-brown italic leading-relaxed mb-16">
-               {t.section3_footer}
-             </p>
-           </div>
-           <div className="flex flex-col items-center">
-              <div className="h-px w-24 bg-brand-bronze/20 mb-8"></div>
-              <Image src="/images/PalAdri-logo-stroke.svg" alt="Logo" width={120} height={120} className="filter grayscale opacity-40 hover:opacity-100 transition-opacity duration-700" />
-           </div>
-        </div>
-      </section>
+      <LegalSection />
     </div>
   );
 }

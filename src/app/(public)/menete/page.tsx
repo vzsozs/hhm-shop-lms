@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useLanguage } from '@/context/language-context';
 import { Language } from '@/modules/shared/lib/i18n-constants';
 import { CheckCircle2, Info, Wind, Waves } from 'lucide-react';
+import { LegalSection } from '@/components/public/LegalSection';
 
 export default function ProcessPage() {
   const { language } = useLanguage();
@@ -191,20 +192,7 @@ export default function ProcessPage() {
         <Image src="/images/Adri-terapia-10.webp" alt="Background" fill className="object-cover" />
       </div>
 
-      {/* Legal Disclaimer Section */}
-      <section className="py-20 bg-brand-white">
-        <div className="container max-w-4xl mx-auto px-4 text-center">
-           <h2 className="font-cormorant text-3xl text-brand-brown font-bold mb-6">
-             {t.legal_notice}
-           </h2>
-           <p className="text-brand-black/60 font-montserrat leading-relaxed mb-8">
-             {t.copyright}
-           </p>
-           <div className="flex justify-center">
-             <Image src="/images/PalAdri-logo-stroke.svg" alt="Logo" width={80} height={80} className="filter grayscale opacity-30" />
-           </div>
-        </div>
-      </section>
+      <LegalSection />
     </div>
   );
 }

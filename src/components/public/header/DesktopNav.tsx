@@ -49,8 +49,7 @@ export const DesktopNav: React.FC<DesktopNavProps> = ({
               { href: "/hangterapia", label: "Hangterápia" },
               { href: "/hangtalak", label: "Himalájai hangtálak" },
               { href: "/hangtal-masszazs", label: "Himalájai Hangtálmasszázs®" },
-              { href: "/tudomanyos-alapok", label: "Tudományos alapok" },
-              { href: "/eszkozok-hangok", label: "Eszközök és hangok" }
+              { href: "/tudomanyos-alapok", label: "Tudományos alapok" }
             ]}
             language={language}
           />

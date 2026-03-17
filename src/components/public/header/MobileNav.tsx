@@ -3,6 +3,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Menu, X } from 'lucide-react';
+import { useSession } from "next-auth/react";
 import { Language, SUPPORTED_LANGUAGES } from '@/modules/shared/lib/i18n-constants';
 
 interface MobileNavProps {
@@ -30,6 +31,10 @@ export const MobileNav: React.FC<MobileNavProps> = ({
   servicesOpen,
   setServicesOpen,
 }) => {
+  const { data: session } = useSession();
+  const profileHref = session ? "/profil" : "/login";
+  const profileLabel = session ? (language === "hu" ? "PROFILOM" : language === "en" ? "MY PROFILE" : "MÔJ PROFIL") : (language === "hu" ? "BEJELENTKEZÉS" : language === "en" ? "LOGIN" : "PRIHLÁSENIE");
+
   return (
     <>
       <div className="xl:hidden relative flex items-start justify-between h-[90px] px-4 pt-4">
@@ -134,7 +139,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
           <Link href="/oktatasok" onClick={() => setMobileMenuOpen(false)} className="font-playfair text-lg text-center border-b border-white/10 pb-2">OKTATÁSOK</Link>
           <Link href="/galeria" onClick={() => setMobileMenuOpen(false)} className="font-playfair text-lg text-center border-b border-white/10 pb-2">GALÉRIA</Link>
           <Link href="/kapcsolat" onClick={() => setMobileMenuOpen(false)} className="font-playfair text-lg text-center border-b border-white/10 pb-2">KAPCSOLAT</Link>
-          <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="font-playfair text-lg text-center pb-2">BEJELENTKEZÉS</Link>
+          <Link href={profileHref} onClick={() => setMobileMenuOpen(false)} className="font-playfair text-lg text-center pb-2 uppercase">{profileLabel}</Link>
         </div>
       )}
     </>

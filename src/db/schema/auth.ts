@@ -76,8 +76,12 @@ export const profiles = pgTable("profiles", {
     .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
   name: varchar("name", { length: 255 }),
+  firstName: varchar("first_name", { length: 255 }),
+  lastName: varchar("last_name", { length: 255 }),
   phone: varchar("phone", { length: 50 }),
   lang: varchar("lang", { length: 10 }).default("hu").notNull(),
+  expertise: varchar("expertise", { length: 255 }),
+  interests: text("interests"),
 });
 
 export const addresses = pgTable("addresses", {
@@ -87,10 +91,12 @@ export const addresses = pgTable("addresses", {
     .notNull(),
   type: addressTypeEnum("type").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
+  country: varchar("country", { length: 100 }),
   zip: varchar("zip", { length: 20 }).notNull(),
   city: varchar("city", { length: 255 }).notNull(),
   street: varchar("street", { length: 255 }).notNull(),
   taxNumber: varchar("tax_number", { length: 50 }),
+  companyName: varchar("company_name", { length: 255 }),
 });
 
 export const userAccess = pgTable("user_access", {

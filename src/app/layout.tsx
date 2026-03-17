@@ -21,6 +21,7 @@ export const metadata: Metadata = {
 };
 
 import { LanguageProvider } from "@/context/language-context";
+import { NextAuthProvider } from "@/components/providers/SessionProvider";
 import { cookies } from "next/headers";
 import { Language, SUPPORTED_LANGUAGES } from "@/modules/shared/lib/i18n-constants";
 
@@ -38,9 +39,11 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <LanguageProvider initialLanguage={initialLang}>
-          <main className="min-h-screen relative">{children}</main>
-        </LanguageProvider>
+        <NextAuthProvider>
+          <LanguageProvider initialLanguage={initialLang}>
+            <main className="min-h-screen relative">{children}</main>
+          </LanguageProvider>
+        </NextAuthProvider>
         <Toaster position="top-center" richColors />
       </body>
     </html>

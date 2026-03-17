@@ -2,6 +2,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useSession } from "next-auth/react";
 import { Language, SUPPORTED_LANGUAGES } from '@/modules/shared/lib/i18n-constants';
 import { NavSubmenu } from './NavSubmenu';
 
@@ -32,6 +33,9 @@ export const DesktopNav: React.FC<DesktopNavProps> = ({
   shopBtnClass,
   iconBtnClass
 }) => {
+  const { data: session } = useSession();
+  const profileHref = session ? "/profil" : "/login";
+
   return (
     <div className="hidden xl:grid grid-cols-[1fr_300px_1fr] relative w-full items-start">
       {/* Left section */}
@@ -96,7 +100,7 @@ export const DesktopNav: React.FC<DesktopNavProps> = ({
           <Link href="/shop" className={shopBtnClass}>
             SHOP <Image src="/assets/icons-cart.svg" width={16} height={16} className="ml-2" alt=""/>
           </Link>
-          <Link href="/login" className={iconBtnClass}>
+          <Link href={profileHref} className={iconBtnClass}>
             <Image src="/assets/icons-login.svg" width={20} height={20} className="h-[20px] w-auto" alt="Login"/>
           </Link>
           

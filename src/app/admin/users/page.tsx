@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { UserActions } from "./user-actions";
+import { UserTableRow } from "./user-table-row";
 import { TestEmailButton } from "./test-email-button";
 import { auth } from "@/auth";
 import { Users } from "lucide-react";
@@ -73,7 +74,7 @@ export default async function AdminUsersPage() {
                 const isVerified = !!user.emailVerified;
 
                 return (
-                  <TableRow key={user.id} className="border-b-white/5 hover:bg-white/5 border-b last:border-0 transition-colors">
+                  <UserTableRow key={user.id} userId={user.id} className="border-b-white/5 hover:bg-white/5 border-b last:border-0 transition-colors">
                     <TableCell className="font-medium text-white">{displayName}</TableCell>
                     <TableCell className="text-white/70">{user.email}</TableCell>
                     <TableCell>
@@ -103,7 +104,7 @@ export default async function AdminUsersPage() {
                     <TableCell className="text-right">
                       <UserActions userId={user.id} currentRole={user.role} currentUserId={currentUserId} />
                     </TableCell>
-                  </TableRow>
+                  </UserTableRow>
                 );
               })}
               {usersList.length === 0 && (

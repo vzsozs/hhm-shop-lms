@@ -2,7 +2,8 @@
 
 import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { Shield, User, Trash2 } from "lucide-react";
+import { Shield, User, Trash2, Edit } from "lucide-react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { toggleUserRole, deleteUser } from "@/modules/auth/actions";
 import {
@@ -29,7 +30,8 @@ export function UserActions({ userId, currentRole, currentUserId }: UserActionsP
   const isAdmin = currentRole === "admin";
   const isSelf = currentUserId === userId;
 
-  const handleToggleRole = () => {
+  const handleToggleRole = (e: React.MouseEvent) => {
+    e.stopPropagation();
     const newRole = isAdmin ? "user" : "admin";
     startTransitionRole(async () => {
       const result = await toggleUserRole(userId, newRole);
@@ -42,7 +44,8 @@ export function UserActions({ userId, currentRole, currentUserId }: UserActionsP
     });
   };
 
-  const handleDeleteUser = () => {
+  const handleDeleteUser = (e: React.MouseEvent) => {
+    e.stopPropagation();
     startTransitionDelete(async () => {
       const result = await deleteUser(userId);
       
@@ -56,6 +59,18 @@ export function UserActions({ userId, currentRole, currentUserId }: UserActionsP
 
   return (
     <div className="flex items-center justify-end gap-2">
+      <Button
+        asChild
+        variant="outline"
+        size="sm"
+        className="border-white/10 hover:border-white/20 transition-colors h-8 text-xs bg-white/5 hover:bg-white/10 text-white"
+      >
+        <Link href={`/admin/users/${userId}`} onClick={(e) => e.stopPropagation()}>
+          <Edit className="w-3.5 h-3.5 mr-1" />
+          Szerkesztés
+        </Link>
+      </Button>
+
       <Button
         variant="outline"
         size="sm"
@@ -83,7 +98,7 @@ export function UserActions({ userId, currentRole, currentUserId }: UserActionsP
       </Button>
 
       <AlertDialog>
-        <AlertDialogTrigger asChild>
+        <AlertDialogTrigger asChild onClick={(e) => e.stopPropagation()}>
           <Button
             variant="outline"
             size="icon"
@@ -105,7 +120,7 @@ export function UserActions({ userId, currentRole, currentUserId }: UserActionsP
               Mégse
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteUser}
+              onClick={(e) => handleDeleteUser(e)}
               className="bg-red-500 hover:bg-red-600 text-white transition-colors"
             >
               Fiók törlése

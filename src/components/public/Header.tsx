@@ -86,17 +86,17 @@ export default function Header() {
         />
       </div>
 
-      <div className={`relative z-10 w-full px-4 flex flex-col items-center text-center transition-all duration-700 ${isHome ? 'gap-1 pt-[20px]' : 'gap-2'}`}>
-        <h1 className={`font-cormorant drop-shadow-md text-white transition-all duration-700 ${isHome ? 'text-[48px] md:text-[80px] font-bold tracking-tight' : 'font-medium text-[38px] md:text-[48px]'}`}>
+      <div className={`relative z-10 w-full px-4 flex flex-col items-center text-center transition-all duration-700 ${isHome ? 'gap-1 pt-[20px]' : 'gap-2 [@media(max-height:750px)]:gap-0'}`}>
+        <h1 className={`font-cormorant drop-shadow-md text-white transition-all duration-700 ${isHome ? 'text-[48px] md:text-[80px] font-bold tracking-tight' : 'font-medium text-[38px] md:text-[48px] [@media(max-height:750px)]:hidden'}`}>
           {config.title}
         </h1>
         
         {isHome && (
           <div className="flex flex-col items-center gap-12 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300 fill-mode-both">
-            <p className="font-cormorant text-xl md:text-3xl text-white/90 italic max-w-3xl drop-shadow-lg leading-relaxed px-4">
+            <p className="font-cormorant text-xl md:text-3xl text-white/90 italic max-w-3xl drop-shadow-lg leading-relaxed px-4 [@media(max-height:750px)]:hidden">
                &quot;{t.subtitle}&quot;
             </p>
-            <div className="flex flex-col sm:flex-row gap-6">
+            <div className="flex flex-col sm:flex-row gap-6 [@media(max-height:750px)]:gap-3">
               <Link href="/kapcsolat" className="bg-white/10 hover:bg-white/20 text-white border border-white/30 px-12 py-5 text-lg rounded-full backdrop-blur-md transition-all shadow-2xl hover:scale-105 font-cormorant tracking-[0.2em] uppercase">
                 {t.cta}
               </Link>

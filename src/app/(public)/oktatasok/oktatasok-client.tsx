@@ -2,13 +2,18 @@
 
 import React from "react";
 import Image from "next/image";
-import Link from "next/link";
-import { Check, Info, Users, ArrowRight, ShoppingCart, Calendar as CalendarIcon, MapPin } from "lucide-react";
+import { Check, Info, Users, ArrowRight, Calendar as CalendarIcon, MapPin } from "lucide-react";
 import { useLanguage } from "@/context/language-context";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { RegistrationForm } from "./components/registration-form";
 
 
 interface ContentDict {
@@ -45,6 +50,8 @@ interface ContentDict {
     groupTraining: string;
     privateTraining: string;
     price: string;
+    registrationFee: string;
+    registrationFeeNotice: string;
   };
 }
 
@@ -82,7 +89,9 @@ const dict: Record<string, ContentDict> = {
       soon: "Hamarosan",
       groupTraining: "Csoportos képzés",
       privateTraining: "Egyéni magánoktatás",
-      price: "Részvételi díj"
+      price: "Részvételi díj",
+      registrationFee: "Jelentkezés",
+      registrationFeeNotice: "a részvételi díjból lejön"
     }
   },
   en: {
@@ -118,7 +127,9 @@ const dict: Record<string, ContentDict> = {
       soon: "Soon",
       groupTraining: "Group training",
       privateTraining: "Private education",
-      price: "Fee"
+      price: "Participation fee",
+      registrationFee: "Registration",
+      registrationFeeNotice: "deducted from the total fee"
     }
   },
   sk: {
@@ -152,9 +163,11 @@ const dict: Record<string, ContentDict> = {
       advanced: "Expert",
       intensive: "Intenzívna",
       soon: "Čoskoro",
-      groupTraining: "Skupinové",
-      privateTraining: "Súkromné",
-      price: "Cena"
+      groupTraining: "Skupinové školenie",
+      privateTraining: "Súkromné vzdelávanie",
+      price: "Účastnícky poplatok",
+      registrationFee: "Registrácia",
+      registrationFeeNotice: "odpočíta sa z celkového poplatku"
     }
   },
   de: {
@@ -190,7 +203,9 @@ const dict: Record<string, ContentDict> = {
       soon: "Demnächst",
       groupTraining: "Gruppentraining",
       privateTraining: "Privatunterricht",
-      price: "Gebühr"
+      price: "Gebühr",
+      registrationFee: "Registrierung",
+      registrationFeeNotice: "wird von der Gesamtgebühr abgezogen"
     }
   }
 };
@@ -291,9 +306,6 @@ export function OktatasokClient({ trainings }: { trainings: Training[] }) {
                   privateLabel={t.labels.privateTraining}
                   groupTrainings={getFilteredTrainings(level, "group")}
                   privateTrainings={getFilteredTrainings(level, "private")}
-                  applyText={t.actions.apply}
-                  addToCartText={t.actions.addToCart}
-                  priceLabel={t.labels.price}
                   lang={lang}
                 />
               </TabsContent>
@@ -589,7 +601,7 @@ const levelDetails: Record<string, { includes: string[]; syllabusTitle: string; 
 
 function LevelContent({ 
   level, title, desc, groupLabel, privateLabel, 
-  groupTrainings, privateTrainings, applyText, addToCartText, priceLabel, lang 
+  groupTrainings, privateTrainings, lang 
 }: {
   level: string;
   title: string;
@@ -598,9 +610,6 @@ function LevelContent({
   privateLabel: string;
   groupTrainings: Training[];
   privateTrainings: Training[];
-  applyText: string;
-  addToCartText: string;
-  priceLabel: string;
   lang: string;
 }) {
   const detail = levelDetails[level as keyof typeof levelDetails];
@@ -628,7 +637,7 @@ function LevelContent({
           {groupTrainings.length > 0 ? (
             <div className="space-y-8">
               {groupTrainings.map((tr) => (
-                <LevelCard key={tr.id} training={tr} title={title} typeLabel={groupLabel} applyText={applyText} addToCartText={addToCartText} priceLabel={priceLabel} lang={lang} />
+                <LevelCard key={tr.id} training={tr} title={title} typeLabel={groupLabel} lang={lang} />
               ))}
             </div>
           ) : (
@@ -639,7 +648,7 @@ function LevelContent({
           {privateTrainings.length > 0 ? (
             <div className="space-y-8">
               {privateTrainings.map((tr) => (
-                <LevelCard key={tr.id} training={tr} title={title} typeLabel={privateLabel} applyText={applyText} addToCartText={addToCartText} priceLabel={priceLabel} lang={lang} />
+                <LevelCard key={tr.id} training={tr} title={title} typeLabel={privateLabel} lang={lang} />
               ))}
             </div>
           ) : (
@@ -691,15 +700,14 @@ function LevelContent({
   );
 }
 
-function LevelCard({ training, title, typeLabel, applyText, addToCartText, priceLabel, lang }: {
+function LevelCard({ training, title, typeLabel, lang }: {
   training: Training;
   title: string;
   typeLabel: string;
-  applyText: string;
-  addToCartText: string;
-  priceLabel: string;
   lang: string;
 }) {
+  const { language } = useLanguage();
+  const t = dict[language] || dict.hu;
   const dates = lang === 'hu' ? training.datesHu : lang === 'en' ? training.datesEn : training.datesSk;
   const location = lang === 'hu' ? training.locationHu : lang === 'en' ? training.locationEn : training.locationSk;
 
@@ -726,20 +734,34 @@ function LevelCard({ training, title, typeLabel, applyText, addToCartText, price
           </div>
           
           <div className="bg-brand-brown p-8 rounded-3xl text-white text-center w-full md:min-w-[240px] md:w-auto shadow-2xl relative overflow-hidden group">
-            <p className="text-xs uppercase tracking-[0.2em] opacity-60 mb-2 font-bold">{priceLabel}</p>
-            <div className="text-3xl md:text-4xl font-bold font-cormorant mb-6">{training.priceHuf.toLocaleString('hu-HU')} Ft</div>
-            <Button className="w-full bg-white text-brand-brown hover:bg-brand-lightbg font-bold tracking-widest uppercase flex items-center justify-center gap-2">
-              <ShoppingCart className="w-4 h-4" />
-              {addToCartText}
-            </Button>
+            <div className="mb-4 pb-4 border-b border-white/10">
+              <p className="text-[10px] uppercase tracking-[0.2em] opacity-60 mb-1 font-bold">{t.labels.price}:</p>
+              <div className="text-xl md:text-2xl font-bold font-cormorant">{training.priceHuf.toLocaleString('hu-HU')} Ft</div>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-[10px] uppercase tracking-[0.2em] opacity-60 mb-1 font-bold">{t.labels.registrationFee}:</p>
+              <div className="text-2xl md:text-3xl font-bold font-cormorant">50.000 Ft</div>
+              <p className="text-[9px] italic opacity-50 mt-1">({t.labels.registrationFeeNotice})</p>
+            </div>
+
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="w-full bg-white text-brand-brown hover:bg-brand-lightbg font-bold tracking-widest uppercase flex items-center justify-center gap-2">
+                  {t.actions.apply}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl p-0 overflow-hidden border-none bg-brand-lightbg rounded-3xl">
+                <div className="p-6 md:p-10">
+                  <RegistrationForm 
+                    trainingTitle={`${title} - ${typeLabel}`} 
+                    trainingDate={dates || "Dátum egyeztetés szerint"} 
+                    lang={language} 
+                  />
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
-        </div>
-        
-        <div className="mt-8 pt-8 border-t border-brand-bronze/10">
-          <Link href="https://forms.gle/LMXTeJyAZ6MkKVGr9" target="_blank" className="inline-flex items-center text-brand-bronze font-bold uppercase tracking-widest text-xs md:text-sm hover:text-brand-brown group transition-colors">
-            {applyText}
-            <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </Link>
         </div>
       </CardContent>
     </Card>

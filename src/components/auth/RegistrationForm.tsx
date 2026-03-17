@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -99,7 +99,7 @@ export function RegistrationForm({ t }: { t: RegistrationTranslations }) {
     mode: "onChange",
   });
 
-  const { register, handleSubmit, formState: { errors }, watch, trigger, setValue } = form;
+  const { register, handleSubmit, formState: { errors }, trigger, setValue } = form;
 
   const onSubmit = (values: FormValues) => {
     startTransition(async () => {
@@ -125,7 +125,13 @@ export function RegistrationForm({ t }: { t: RegistrationTranslations }) {
     if (currentStep > 1) setCurrentStep(prev => prev - 1);
   };
 
-  const isStep1ValidOnly = watch("email") && watch("password") && watch("passwordConfirm") && watch("termsAccepted") && watch("privacyAccepted") && !errors.email && !errors.password && !errors.passwordConfirm;
+  const watchedValues = useWatch({
+    control: form.control,
+    name: ["email", "password", "passwordConfirm", "termsAccepted", "privacyAccepted"]
+  });
+  const [email, password, passwordConfirm, termsAccepted, privacyAccepted] = watchedValues;
+
+  const isStep1ValidOnly = email && password && passwordConfirm && termsAccepted && privacyAccepted && !errors.email && !errors.password && !errors.passwordConfirm;
 
   return (
     <div className="w-full max-w-4xl mx-auto">
@@ -263,7 +269,7 @@ export function RegistrationForm({ t }: { t: RegistrationTranslations }) {
               <div className="flex items-start gap-2">
                 <Checkbox 
                   id="terms" 
-                  checked={watch("termsAccepted")}
+                  checked={termsAccepted}
                   onCheckedChange={(checked) => setValue("termsAccepted", !!checked, { shouldValidate: true })}
                   className="mt-1 border-brand-bronze/30 data-[state=checked]:bg-brand-brown data-[state=checked]:border-brand-brown"
                 />
@@ -276,7 +282,7 @@ export function RegistrationForm({ t }: { t: RegistrationTranslations }) {
               <div className="flex items-start gap-2">
                 <Checkbox 
                   id="privacy" 
-                  checked={watch("privacyAccepted")}
+                  checked={privacyAccepted}
                   onCheckedChange={(checked) => setValue("privacyAccepted", !!checked, { shouldValidate: true })}
                   className="mt-1 border-brand-bronze/30 data-[state=checked]:bg-brand-brown data-[state=checked]:border-brand-brown"
                 />

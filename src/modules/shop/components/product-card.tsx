@@ -125,7 +125,7 @@ export function ProductCard({ product, lang }: { product: ProductListItem; lang:
              return (
                <Link 
                  key={c.id} 
-                 href={`/?categoryId=${c.id}`}
+                 href={`/shop/?categoryId=${c.id}`}
                  className="text-[8px] font-bold tracking-widest uppercase text-brand-brown/80 bg-brand-bronze/10 px-2 py-1 flex items-center gap-1 rounded-sm hover:bg-brand-bronze/20 hover:text-brand-brown transition-colors cursor-pointer"
                  title={catName}
                >

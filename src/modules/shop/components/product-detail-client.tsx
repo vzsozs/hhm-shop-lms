@@ -118,7 +118,7 @@ export function ProductDetailClient({ product, lang }: { product: ProductDetailI
       <div className="max-w-7xl mx-auto px-4 relative z-10">
         <div className="mb-6">
           <Link 
-            href="/" 
+            href="/shop" 
             className="inline-flex items-center gap-2 text-brand-black/60 hover:text-brand-bronze transition-colors font-montserrat text-sm font-medium group"
           >
             <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />

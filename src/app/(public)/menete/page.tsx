@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { useLanguage } from '@/context/language-context';
 import { Language } from '@/modules/shared/lib/i18n-constants';
-import { CheckCircle2, Info, Wind, Waves } from 'lucide-react';
+import { CheckCircle2, Waves } from 'lucide-react';
 import { LegalSection } from '@/components/public/LegalSection';
 
 export default function ProcessPage() {

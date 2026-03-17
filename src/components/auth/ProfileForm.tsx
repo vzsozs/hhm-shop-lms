@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
-import { useForm, Resolver } from "react-hook-form";
+import { useForm, useWatch, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { User, Phone, MapPin, Building2, Hash, Briefcase, Languages, Home, CreditCard, Truck, LogOut } from "lucide-react";
@@ -126,7 +126,7 @@ export function ProfileForm({ initialData, t }: ProfileFormProps) {
             <Label className={labelClass}>{t.lang_label}</Label>
             <div className="relative">
               <Languages className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-bronze/40 z-10" />
-              <Select value={form.watch("lang")} onValueChange={(val) => form.setValue("lang", val)}>
+              <Select value={useWatch({ control: form.control, name: "lang" })} onValueChange={(val) => form.setValue("lang", val)}>
                 <SelectTrigger className={inputClass}>
                   <SelectValue />
                 </SelectTrigger>
@@ -152,7 +152,7 @@ export function ProfileForm({ initialData, t }: ProfileFormProps) {
             <Label className={labelClass}>{t.expertise_label}</Label>
             <div className="relative">
               <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-bronze/40 z-10" />
-              <Select value={form.watch("expertise") || ""} onValueChange={(val) => form.setValue("expertise", val)}>
+              <Select value={useWatch({ control: form.control, name: "expertise" }) || ""} onValueChange={(val) => form.setValue("expertise", val)}>
                 <SelectTrigger className={inputClass}>
                   <SelectValue />
                 </SelectTrigger>
@@ -170,7 +170,7 @@ export function ProfileForm({ initialData, t }: ProfileFormProps) {
             <Label className={labelClass}>{t.interests_label}</Label>
             <div className="relative">
               <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-bronze/40 z-10" />
-              <Select value={form.watch("interests") || ""} onValueChange={(val) => form.setValue("interests", val)}>
+              <Select value={useWatch({ control: form.control, name: "interests" }) || ""} onValueChange={(val) => form.setValue("interests", val)}>
                 <SelectTrigger className={inputClass}>
                   <SelectValue />
                 </SelectTrigger>

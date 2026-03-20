@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
-import { orders } from '@/db/schema/shop';
+import { orders, OrderStatusType } from '@/db/schema/shop';
 import { eq, inArray, gte, and, sql, desc } from 'drizzle-orm';
 import { verifyMufisAuth } from '@/lib/mufis';
 
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     if (orderId) conditions.push(eq(orders.id, orderId));
     if (statusStr) {
       const statuses = statusStr.split(',').map(s => s.trim().toLowerCase());
-      conditions.push(inArray(orders.status, statuses as any));
+      conditions.push(inArray(orders.status, statuses as OrderStatusType[]));
     }
     if (updatedAtMin) {
       conditions.push(gte(orders.updatedAt, new Date(updatedAtMin)));
@@ -79,19 +79,19 @@ export async function POST(req: Request) {
         date_mod: order.updatedAt.toISOString().replace('T', ' ').substring(0, 19),
         
         billing_name: order.customerName || "Ismeretlen",
-        billing_city: "Budapest", // TODO: Később dinamikus adatok
-        billing_streetnum: "Ismeretlen út 1.",
-        billing_zip: "1000",
-        billing_country: "HU",
+        billing_city: order.shippingCity || "",
+        billing_streetnum: order.shippingAddress || "",
+        billing_zip: order.shippingZip || "",
+        billing_country: order.shippingCountry || "HU",
         
         email: order.customerEmail || "",
-        phone: "",
+        phone: order.customerPhone || "",
         
         lang: "hu",
         currency: order.currency,
         total_price: Number(order.totalPrice),
         payment_type: "CARD",
-        shipping_type: "Házhozszállítás", // TODO: Később dinamikus adatok
+        shipping_type: "Házhozszállítás", // Ide kerülhet a GLS/Foxpost választó majd
         
         order_items: order.orderItems.map(item => {
           const productNameObj = item.productVariant.product.name as Record<string, string>;

@@ -4,9 +4,10 @@ import { Check, Award } from "lucide-react";
 import { ProductDetailSubComponentProps } from "./product-detail-types";
 import { renderValueWithLinks } from "./product-detail-utils";
 import { AddToCartButton } from "@/components/shop/add-to-cart-button";
+import { ProductVariantItem } from "@/modules/shop/queries";
 
 interface ProductPriceActionsProps extends ProductDetailSubComponentProps {
-  activeVariant: any;
+  activeVariant: ProductVariantItem | undefined;
   priceHuf: string | null;
   priceEur: string | null;
 }

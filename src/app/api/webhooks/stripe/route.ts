@@ -50,8 +50,28 @@ export async function POST(req: Request) {
       const orderId = paymentIntent.metadata?.orderId;
       
       if (orderId) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const updateData: any = { status: OrderStatus.PAID };
+        
+        if (paymentIntent.shipping?.address) {
+          const addr = paymentIntent.shipping.address;
+          updateData.shippingCity = addr.city || null;
+          updateData.shippingCountry = addr.country || null;
+          updateData.shippingZip = addr.postal_code || null;
+          updateData.shippingAddress = [addr.line1, addr.line2].filter(Boolean).join(', ') || null;
+          updateData.customerPhone = paymentIntent.shipping.phone || null;
+          
+          if (paymentIntent.shipping.name) {
+             updateData.customerName = paymentIntent.shipping.name;
+          }
+        }
+
+        if (paymentIntent.receipt_email) {
+           updateData.customerEmail = paymentIntent.receipt_email;
+        }
+
         await db.update(orders)
-          .set({ status: OrderStatus.PAID })
+          .set(updateData)
           .where(eq(orders.id, orderId));
           
         console.log(`PaymentIntent webhook sikeres: Order ${orderId} státusza paid lett.`);

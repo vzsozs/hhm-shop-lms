@@ -36,7 +36,6 @@ export function ProductCard({ product, lang }: { product: ProductListItem; lang:
   const t = dict[lang] || dict.hu;
 
   const name = (product.name as Record<string, string>)[lang] || product.name["hu"] || t.unnamedProduct;
-  const desc = product.description ? (product.description as Record<string, string>)[lang] || product.description["hu"] || "" : "";
   
   // Ár formázó (egyelőre fixen HUF vagy EUR, függően a kéréstől, most simán megmutatjuk mindkettőt ha van)
   const priceHuf = product.minPriceHuf ? new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 0 }).format(product.minPriceHuf) : null;

@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import {
   PaymentElement,
+  AddressElement,
   useStripe,
   useElements
 } from "@stripe/react-stripe-js";
@@ -46,7 +47,19 @@ export function CheckoutForm() {
 
   return (
     <form id="payment-form" onSubmit={handleSubmit} className="space-y-6 bg-white/70 p-6 md:p-8 rounded-xl shadow-lg border border-brand-bronze/20 backdrop-blur-sm">
-      <PaymentElement id="payment-element" options={{ layout: "tabs" }} />
+      <div className="mb-6">
+        <h3 className="text-xl font-bold font-cormorant text-brand-brown mb-4">
+          {language === 'hu' ? '1. Szállítási Adatok' : (language === 'en' ? '1. Shipping Details' : '1. Dodacie Údaje')}
+        </h3>
+        <AddressElement options={{ mode: 'shipping', fields: { phone: 'always' } }} />
+      </div>
+
+      <div className="mb-6">
+        <h3 className="text-xl font-bold font-cormorant text-brand-brown mb-4 mt-6">
+          {language === 'hu' ? '2. Fizetési Adatok' : (language === 'en' ? '2. Payment Details' : '2. Platobné Údaje')}
+        </h3>
+        <PaymentElement id="payment-element" options={{ layout: "tabs" }} />
+      </div>
       
       <Button 
         disabled={isLoading || !stripe || !elements} 

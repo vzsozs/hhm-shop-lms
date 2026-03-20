@@ -153,6 +153,11 @@ export const orders = pgTable("orders", {
   stripePaymentIntentId: varchar("stripe_payment_intent_id", { length: 255 }), // Új Elements PaymentIntent
   customerEmail: varchar("customer_email", { length: 255 }), // Vendég vásárlás emailje
   customerName: varchar("customer_name", { length: 255 }), // Vendég neve
+  customerPhone: varchar("customer_phone", { length: 50 }), // Telefonszám a futárnak
+  shippingCountry: varchar("shipping_country", { length: 50 }),
+  shippingZip: varchar("shipping_zip", { length: 20 }),
+  shippingCity: varchar("shipping_city", { length: 150 }),
+  shippingAddress: varchar("shipping_address", { length: 500 }), // Utca, hsz., ajtó
   currency: varchar("currency", { length: 3 }).default("HUF").notNull(), // Fizetési valuta: HUF vagy EUR
   totalPrice: decimal("total_price", { precision: 10, scale: 2 }).notNull(), // Ár floatként a cent/eur miatt
   createdAt: timestamp("created_at").defaultNow().notNull(),

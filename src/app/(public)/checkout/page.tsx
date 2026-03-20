@@ -13,6 +13,7 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 
 
 export default function CheckoutPage() {
   const [clientSecret, setClientSecret] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const { items } = useCartStore();
   const { language } = useLanguage();
   const router = useRouter();
@@ -29,13 +30,22 @@ export default function CheckoutPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ items, language }),
     })
-      .then((res) => res.json())
+      .then(async (res) => {
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text);
+        }
+        return res.json();
+      })
       .then((data) => {
         if (data.clientSecret) {
           setClientSecret(data.clientSecret);
         }
       })
-      .catch((err) => console.error("Hiba a fizetés előkészítésekor:", err));
+      .catch((err) => {
+        console.error("Hiba a fizetés előkészítésekor:", err);
+        setErrorMessage(err.message);
+      });
   }, [items, language, router]);
 
   const appearance = {
@@ -58,7 +68,14 @@ export default function CheckoutPage() {
         {language === 'hu' ? 'Biztonságos Fizetés' : (language === 'en' ? 'Secure Checkout' : 'Bezpečná platba')}
       </h1>
       
-      {clientSecret ? (
+      {errorMessage ? (
+        <div className="flex flex-col items-center justify-center space-y-4 my-20">
+          <div className="text-destructive font-bold text-xl text-center bg-red-50 p-6 rounded-lg max-w-lg border border-red-200">
+            {errorMessage}
+          </div>
+          <button onClick={() => router.push('/shop')} className="text-brand-brown underline font-bold mt-4">Vissza a bolthoz</button>
+        </div>
+      ) : clientSecret ? (
         <Elements options={options} stripe={stripePromise}>
           <CheckoutForm />
         </Elements>

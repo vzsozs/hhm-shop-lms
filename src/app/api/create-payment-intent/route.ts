@@ -5,7 +5,7 @@ import { orders, orderItems, OrderStatus } from '@/db/schema/shop';
 import { eq } from 'drizzle-orm';
 import { CartItem } from '@/context/cart-store';
 
-const ZERO_DECIMAL_CURRENCIES = ['huf'];
+const ZERO_DECIMAL_CURRENCIES: string[] = []; // Stripe HUF-t 2 tizedesjegyűként kezeli a charge kéréseknél (fillér)!
 
 export async function POST(req: Request) {
   try {
@@ -26,6 +26,13 @@ export async function POST(req: Request) {
     }, 0);
 
     const amountForStripe = ZERO_DECIMAL_CURRENCIES.includes(currency) ? Math.round(totalPrice) : Math.round(totalPrice * 100);
+
+    if (currency === 'huf' && amountForStripe < 17500) {
+      return new NextResponse("A fizetési szolgáltató (Stripe) minimális tranzakciós korlátja 175 Ft. Kérlek, emeld meg a kosár értékét!", { status: 400 });
+    }
+    if (currency === 'eur' && amountForStripe < 50) {
+      return new NextResponse("The minimum transaction limit is €0.50.", { status: 400 });
+    }
 
     // Egyedi rendelés azonosító
     const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;

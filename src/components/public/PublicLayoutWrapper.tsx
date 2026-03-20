@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
+import { CartSheet } from '@/components/shop/cart-sheet';
 
 export default function PublicLayoutWrapper({
   children,
@@ -35,6 +36,7 @@ export default function PublicLayoutWrapper({
         {children}
       </main>
       {!isHome && footer}
+      <CartSheet />
     </div>
   );
 }

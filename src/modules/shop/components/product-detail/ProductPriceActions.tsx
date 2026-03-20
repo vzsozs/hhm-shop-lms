@@ -1,9 +1,9 @@
 
 import React from "react";
-import { Button } from "@/components/ui/button";
 import { Check, Award } from "lucide-react";
 import { ProductDetailSubComponentProps } from "./product-detail-types";
 import { renderValueWithLinks } from "./product-detail-utils";
+import { AddToCartButton } from "@/components/shop/add-to-cart-button";
 
 interface ProductPriceActionsProps extends ProductDetailSubComponentProps {
   activeVariant: any;
@@ -67,10 +67,21 @@ export const ProductPriceActions: React.FC<ProductPriceActionsProps> = ({
         </div>
       )}
 
-      <div className="mt-2">
-        <Button className="w-full sm:w-auto px-8 h-12 text-sm bg-brand-bronze hover:bg-[#726251] text-white rounded-md shadow-md hover:shadow-lg transition-all duration-300 font-bold tracking-wider border border-transparent">
-          {t.addToCart}
-        </Button>
+      <div className="mt-2 text-white">
+        <AddToCartButton 
+          item={{
+            variantId: activeVariant?.id || '',
+            productId: typeof product.id === 'string' ? product.id : '',
+            name: product.name,
+            variantName: { hu: activeVariant?.sku || '' },
+            priceHuf: activeVariant?.priceHuf || 0,
+            priceEur: activeVariant?.priceEur || 0,
+            type: product.type as "physical" | "digital" | "meinl",
+            imageUrl: product.media?.[0]?.url || null,
+            weight: activeVariant?.weight || null
+          }}
+          className="w-full sm:w-auto px-8 h-12 text-sm bg-brand-bronze hover:bg-[#726251] text-white rounded-md shadow-md hover:shadow-lg transition-all duration-300 font-bold tracking-wider border border-transparent"
+        />
       </div>
     </div>
   );

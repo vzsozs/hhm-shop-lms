@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Menu, X } from 'lucide-react';
 import { useSession } from "next-auth/react";
 import { Language, SUPPORTED_LANGUAGES } from '@/modules/shared/lib/i18n-constants';
+import { CartToggleButton } from '@/components/shop/cart-toggle-button';
 
 interface MobileNavProps {
   mobileMenuOpen: boolean;
@@ -83,9 +84,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
               </div>
             )}
           </div>
-          <Link href="/shop" className="p-2 border border-white/20 rounded-full bg-brand-bronze/50 backdrop-blur-sm w-10 h-10 flex items-center justify-center">
-            <Image src="/assets/icons-cart.svg" width={20} height={20} className="w-5" alt="Shop"/>
-          </Link>
+          <CartToggleButton className="p-2 border border-white/20 rounded-full bg-brand-bronze/50 backdrop-blur-sm w-10 h-10 flex items-center justify-center" imageWidth={20} imageHeight={20} />
         </div>
       </div>
 

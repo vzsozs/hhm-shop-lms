@@ -180,9 +180,11 @@ export function ProductCard({ product, lang }: { product: ProductListItem; lang:
           )}
         </div>
         
-        <Button size="icon" className="rounded-full h-11 w-11 shadow-md hover:scale-105 transition-transform bg-[#8a7964] hover:bg-[#6c5e4d] text-white border-none" aria-label={t.addToCart}>
-          <ShoppingCart className="h-4 w-4" />
-        </Button>
+        <Link href={`/products/${product.slug[lang] || product.slug["hu"]}`}>
+          <Button size="icon" className="rounded-full h-11 w-11 shadow-md hover:scale-105 transition-transform bg-[#8a7964] hover:bg-[#6c5e4d] text-white border-none" aria-label={t.addToCart}>
+            <ShoppingCart className="h-4 w-4" />
+          </Button>
+        </Link>
       </CardFooter>
     </Card>
   );

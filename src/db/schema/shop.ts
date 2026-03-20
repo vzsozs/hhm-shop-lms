@@ -136,7 +136,12 @@ export const orders = pgTable("orders", {
   userId: uuid("user_id").references(() => users.id, { onDelete: 'set null' }), // Ha törlődik a user, a rendelés maradjon meg
   status: orderStatusEnum("status").default("pending").notNull(),
   trackingCode: varchar("tracking_code", { length: 255 }),
-  totalPrice: integer("total_price").notNull(), // Huf-ban tárolva
+  stripeSessionId: varchar("stripe_session_id", { length: 255 }), // Régi Checkout session
+  stripePaymentIntentId: varchar("stripe_payment_intent_id", { length: 255 }), // Új Elements PaymentIntent
+  customerEmail: varchar("customer_email", { length: 255 }), // Vendég vásárlás emailje
+  customerName: varchar("customer_name", { length: 255 }), // Vendég neve
+  currency: varchar("currency", { length: 3 }).default("HUF").notNull(), // Fizetési valuta: HUF vagy EUR
+  totalPrice: decimal("total_price", { precision: 10, scale: 2 }).notNull(), // Ár floatként a cent/eur miatt
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -146,7 +151,7 @@ export const orderItems = pgTable("order_items", {
   orderId: uuid("order_id").references(() => orders.id, { onDelete: 'cascade' }).notNull(),
   productVariantId: uuid("product_variant_id").references(() => productVariants.id).notNull(),
   quantity: integer("quantity").notNull(),
-  unitPrice: integer("unit_price").notNull(),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
 });
 
 export const coupons = pgTable("coupons", {

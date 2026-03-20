@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { db } from '@/db';
-import { orders } from '@/db/schema/shop';
+import { orders, OrderStatus } from '@/db/schema/shop';
 import { eq } from 'drizzle-orm';
 import Stripe from 'stripe';
 
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
         // Frissítjük a rendelést fizetettre
         await db.update(orders)
           .set({ 
-            status: "paid",
+            status: OrderStatus.PAID,
             customerEmail: customerEmail || null,
             customerName: customerName || null
           })
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
       
       if (orderId) {
         await db.update(orders)
-          .set({ status: "paid" })
+          .set({ status: OrderStatus.PAID })
           .where(eq(orders.id, orderId));
           
         console.log(`PaymentIntent webhook sikeres: Order ${orderId} státusza paid lett.`);

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { db } from '@/db';
-import { orders, orderItems } from '@/db/schema/shop';
+import { orders, orderItems, OrderStatus } from '@/db/schema/shop';
 import { eq } from 'drizzle-orm';
 import { CartItem } from '@/context/cart-store';
 
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     // Létrehozzuk a rendelést "pending" státusszal az adatbázisban
     const [newOrder] = await db.insert(orders).values({
       orderNumber,
-      status: "pending",
+      status: OrderStatus.PENDING,
       currency: currency.toUpperCase(),
       totalPrice: totalPrice.toString(),
     }).returning({ id: orders.id });

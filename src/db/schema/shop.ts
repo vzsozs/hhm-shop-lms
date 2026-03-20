@@ -6,7 +6,18 @@ import { users } from "./auth";
 export const productTypeEnum = pgEnum("product_type", ["physical", "digital", "meinl"]);
 export const productStatusEnum = pgEnum("product_status", ["ACTIVE", "INACTIVE"]);
 export const mediaTypeEnum = pgEnum("media_type", ["IMAGE", "YOUTUBE", "AUDIO"]);
-export const orderStatusEnum = pgEnum("order_status", ["pending", "paid", "shipped", "completed", "cancelled"]);
+
+export const OrderStatus = {
+  PENDING: "pending",
+  PAID: "paid",
+  PROCESSING: "processing",
+  SHIPPED: "shipped",
+  COMPLETED: "completed",
+  CANCELLED: "cancelled"
+} as const;
+export type OrderStatusType = typeof OrderStatus[keyof typeof OrderStatus];
+
+export const orderStatusEnum = pgEnum("order_status", ["pending", "paid", "processing", "shipped", "completed", "cancelled"]);
 
 // Nevesített termékcsaládok táblája (pl. "Meinl Sonic Energy sorozat")
 export const productGroups = pgTable("product_groups", {
@@ -134,8 +145,10 @@ export const orders = pgTable("orders", {
   id: uuid("id").defaultRandom().primaryKey(),
   orderNumber: varchar("order_number", { length: 100 }).unique().notNull(), // MuFis egyedi átadáshoz
   userId: uuid("user_id").references(() => users.id, { onDelete: 'set null' }), // Ha törlődik a user, a rendelés maradjon meg
-  status: orderStatusEnum("status").default("pending").notNull(),
+  status: orderStatusEnum("status").default(OrderStatus.PENDING).notNull(),
   trackingCode: varchar("tracking_code", { length: 255 }),
+  packageNumber: varchar("package_number", { length: 100 }), // Mufis csomagszám
+  trackingLink: varchar("tracking_link", { length: 500 }), // Nyomkövető link
   stripeSessionId: varchar("stripe_session_id", { length: 255 }), // Régi Checkout session
   stripePaymentIntentId: varchar("stripe_payment_intent_id", { length: 255 }), // Új Elements PaymentIntent
   customerEmail: varchar("customer_email", { length: 255 }), // Vendég vásárlás emailje
@@ -153,6 +166,15 @@ export const orderItems = pgTable("order_items", {
   quantity: integer("quantity").notNull(),
   unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
 });
+
+export const ordersRelations = relations(orders, ({ many }) => ({
+  orderItems: many(orderItems),
+}));
+
+export const orderItemsRelations = relations(orderItems, ({ one }) => ({
+  order: one(orders, { fields: [orderItems.orderId], references: [orders.id] }),
+  productVariant: one(productVariants, { fields: [orderItems.productVariantId], references: [productVariants.id] }),
+}));
 
 export const coupons = pgTable("coupons", {
   id: uuid("id").defaultRandom().primaryKey(),
